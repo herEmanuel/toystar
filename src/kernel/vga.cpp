@@ -1,6 +1,6 @@
 #include "vga.h"
 #include "font.h"
-#include "io.h"
+#include <libc/strings.h>
 #include <stdint.h>
 #include <boot/stivale2.h>
 
@@ -11,6 +11,20 @@ static uint16_t screen_width;
 static uint16_t screen_height;
 static uint16_t cursor_x;
 static uint16_t cursor_y;
+
+void incrementCursorX(uint16_t amount) {
+    cursor_x += amount;
+    if (cursor_x >= screen_width) {
+        cursor_x = 0;
+        cursor_y += 18;
+    }
+}
+
+void putPixel(uint16_t x, uint16_t y, uint32_t color) {
+    if (x >= screen_width || y >= screen_height) { return; }
+
+    frameBuffer[y * (pitch / 4) + x] = color;
+}
 
 void rect(uint16_t x, uint16_t y, uint16_t sizeX, uint16_t sizeY, uint32_t color) {
     cursor_x = x;
@@ -40,6 +54,17 @@ void video_init(stivale2_struct_tag_framebuffer* frameBufferTag) {
 }
 
 void printChar(char c, uint32_t color) {
+
+    switch (c) {
+        case '\n':
+            cursor_y += 18;
+            cursor_x = 0;
+            return;
+
+        default:
+            break;
+    }
+
     size_t offset = (size_t)c * 16;
 
     for (int b = 0; b < char_height; b++) {
@@ -50,12 +75,7 @@ void printChar(char c, uint32_t color) {
         }
     }
 
-    cursor_x += 10;
-
-    if (cursor_x >= screen_width) {
-        cursor_x = 0;
-        cursor_y++;
-    }
+    incrementCursorX(10);
 }
 
 void kprint(const char* msg) {
@@ -65,4 +85,11 @@ void kprint(const char* msg) {
         printChar(msg[i], 0xffffff);
         i++;
     }
+
+    if (cursor_x > 0) { incrementCursorX(10); } 
+}
+
+void kprint(size_t num) {
+    const char* msg = itoa(num);
+    kprint(msg);
 }

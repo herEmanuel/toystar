@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <boot/stivale2.h>
+#include <libc/strings.h>
 #include "vga.h"
 
 void* getTag(stivale2_struct* firstTag, uint64_t tagId) {
@@ -24,16 +25,18 @@ extern "C" void _start(stivale2_struct* stivale2) {
     frameBufferInfo = (stivale2_struct_tag_framebuffer*)getTag(stivale2, STIVALE2_STRUCT_TAG_FRAMEBUFFER_ID);
 
     video_init(frameBufferInfo);
-
-    // uint32_t* buffer = (uint32_t*)frameBufferInfo->framebuffer_addr;
-
-    // for (int i = 0; i < frameBufferInfo->framebuffer_height; i++) {
-    //     for (int c = 0; c < frameBufferInfo->framebuffer_width; c++) {
-    //         buffer[i * (frameBufferInfo->framebuffer_pitch / 4) + c] = 0x9061ff;
-    //     }
-    // }
-
+    kprint("Kernel loaded!\n");
+    kprint("---RESOLUTION---\n");
+    kprint("Width: ");
+    kprint(itoa(frameBufferInfo->framebuffer_width));
+    kprint("\n");
+    kprint("Height: ");
+    kprint(itoa(frameBufferInfo->framebuffer_height));
+    kprint("\n");
+    
+    kprint("potato");
     kprint("teste");
+    kprint("oii");
 
     while(true)
         asm ("hlt");
