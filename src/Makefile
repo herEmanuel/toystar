@@ -13,7 +13,7 @@ CFLAGS := -I . -ffreestanding -Wall -Wextra -fPIC \
 	-mno-sse2            \
 	-mno-red-zone
 
-LFLAGS := -ffreestanding -nostdlib -lgcc -pie
+LFLAGS := -ffreestanding -nostdlib -lgcc -pie -fPIC
 
 OS_NAME := toystar
 LINKER := kernel/linker.ld
@@ -23,10 +23,10 @@ src := $(shell find -name '*.cpp')
 
 asmSrc := $(shell find -name '*.s')
 
-asmObjs := $(subst .s,.o,$(patsubst %,../obj/%,$(asm_src)))
+asmObjs := $(subst .s,.o,$(patsubst %,../obj/%,$(asmSrc)))
 
 objs := $(subst .cpp,.o,$(patsubst %,../obj/%,$(src))) \
-		$(asm_objs)
+		$(asmObjs)
 
 .PHONY: clean all
 
@@ -35,8 +35,8 @@ all: $(OS_NAME)
 $(OS_NAME): $(objs) 
 	$(CC) -T $(LINKER) -o $(OS_NAME).elf $(LFLAGS) $(objs)
 
-# obj/%.o: src/%.s | $(dirs)
-# 	$(ASM) $< -o $@
+../obj/%.o: %.s | $(dirs)
+	$(ASM) $< -o $@
 
 # obj/kernel/interrupts/interrupts.o: src/kernel/interrupts/interrupts.cpp
 # 	$(CC) -c $< -o $@ $(CFLAGS) -mgeneral-regs-only -mno-80387
