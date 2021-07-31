@@ -5,7 +5,7 @@
 
 extern char charBuffer[20];
 
-const char* itoa(size_t number);
+const char* itoa(size_t number, size_t base);
 size_t atoi(const char* str);
 
 #endif

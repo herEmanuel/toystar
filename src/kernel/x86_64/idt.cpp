@@ -4,6 +4,8 @@
 #include <kernel/vga.h>
 #include <libc/memory.h>
 
+//TODO: configure PIC or maybe APIC
+
 extern "C" void loadIdt(uint64_t);
 
 __INTERRUPT__ void division_by_zero_handler(interrupt_frame* intFrame);

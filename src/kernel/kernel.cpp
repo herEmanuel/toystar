@@ -4,6 +4,7 @@
 #include <libc/strings.h>
 #include <libc/memory.h>
 #include "vga.h"
+#include "paging/pmm.h"
 #include "x86_64/gdt.h"
 #include "x86_64/idt.h"
 
@@ -27,14 +28,17 @@ extern "C" void _start(stivale2_struct* stivale2) {
     stivale2_struct_tag_framebuffer* frameBufferInfo;
     frameBufferInfo = (stivale2_struct_tag_framebuffer*)getTag(stivale2, STIVALE2_STRUCT_TAG_FRAMEBUFFER_ID);
 
+    stivale2_struct_tag_memmap* memmapInfo;
+    memmapInfo = (stivale2_struct_tag_memmap*)getTag(stivale2, STIVALE2_STRUCT_TAG_MEMMAP_ID);
+
     video_init(frameBufferInfo);
     kprint("Kernel loaded!\n");
     kprint("---RESOLUTION---\n");
     kprint("Width: ");
-    kprint(itoa(frameBufferInfo->framebuffer_width));
+    kprint(itoa(frameBufferInfo->framebuffer_width, 10));
     kprint("\n");
     kprint("Height: ");
-    kprint(itoa(frameBufferInfo->framebuffer_height));
+    kprint(itoa(frameBufferInfo->framebuffer_height, 10));
     kprint("\n");
 
     init_gdt();
@@ -43,11 +47,18 @@ extern "C" void _start(stivale2_struct* stivale2) {
     init_idt();
     kprint("IDT loaded\n");
 
-    asm volatile(
-        "movq $100, %rax\n"
-        "xor %rcx, %rcx\n"
-        "idiv %rcx"
-    );
+    pmmInit(memmapInfo->memmap, memmapInfo->entries);
+    
+    void* teste = pmmAlloc(1);  
+    void* teste2 = pmmAlloc(1);  
+    pmmFree(teste, 1);
+    void* teste3 = pmmAlloc(1);  
+    kprint("ended :(\n");
+
+    // for (int i = 0; i < 10; i++) {
+    //     kprint((size_t)pmmAlloc(1));
+    //     kprint("\n");
+    // }
 
     while(true)
         asm ("hlt");

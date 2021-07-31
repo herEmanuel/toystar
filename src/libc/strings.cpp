@@ -3,11 +3,11 @@
 
 char charBuffer[20];
 
-const char* itoa(size_t number) {
+const char* itoa(size_t number, size_t base) {
     size_t i = 0;
     size_t c = 0;
 
-    if (number == 0) {
+    if (number == 0 || base != 16 && base != 10) {
         return "0\0";
     }
 
@@ -15,11 +15,17 @@ const char* itoa(size_t number) {
         charBuffer[0] = '-';
         i++;
         c++;
+    } else if (base == 16) {
+        charBuffer[0] = '0';
+        charBuffer[1] = 'x';
+        i += 2;
+        c += 2;
     }
-
+    
     while (number) {
-        charBuffer[i] = number % 10 + '0';
-        number /= 10;
+        size_t digit = number % base;
+        charBuffer[i] = (digit <= 9) ? digit + '0' : digit - 10 + 'A';
+        number /= base;
         i++;
     }
 

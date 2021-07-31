@@ -1,6 +1,7 @@
 #include "vga.h"
 #include "font.h"
 #include <libc/strings.h>
+#include <libc/memory.h>
 #include <stdint.h>
 #include <boot/stivale2.h>
 
@@ -17,6 +18,11 @@ void incrementCursorX(uint16_t amount) {
     if (cursor_x >= screen_width) {
         cursor_x = 0;
         cursor_y += 18;
+
+        if (cursor_y >= screen_height) {
+            rect(0, 0, screen_width, screen_height, 0x9061ff);
+        }
+
     }
 }
 
@@ -90,6 +96,6 @@ void kprint(const char* msg) {
 }
 
 void kprint(size_t num) {
-    const char* msg = itoa(num);
+    const char* msg = itoa(num, 16);
     kprint(msg);
 }
