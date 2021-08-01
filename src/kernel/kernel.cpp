@@ -47,12 +47,12 @@ extern "C" void _start(stivale2_struct* stivale2) {
     init_idt();
     kprint("IDT loaded\n");
 
-    pmmInit(memmapInfo->memmap, memmapInfo->entries);
+    PMM::init(memmapInfo->memmap, memmapInfo->entries);
     
-    void* teste = pmmAlloc(1);  
-    void* teste2 = pmmAlloc(1);  
-    pmmFree(teste, 1);
-    void* teste3 = pmmAlloc(1);  
+    void* teste = PMM::alloc(1);  
+    void* teste2 = PMM::alloc(1);  
+    PMM::free(teste, 1);
+    void* teste3 = PMM::alloc(1);  
     kprint("ended :(\n");
 
     // for (int i = 0; i < 10; i++) {

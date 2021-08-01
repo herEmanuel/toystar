@@ -1,4 +1,5 @@
 #include "idt.h"
+#include "pic.h"
 #include <stdint.h>
 #include <stddef.h>
 #include <kernel/vga.h>
@@ -33,6 +34,8 @@ void init_idt() {
     registerInterruptHandler(0xD, (uint64_t)&general_protection_handler, 0x8E, 0);
 
     IDTDescriptor idtDescriptor = {sizeof(idt), (uint64_t)&idt};
+
+    remapPIC(0x20, 0x28);
 
     loadIdt((uint64_t)&idtDescriptor);
 }
