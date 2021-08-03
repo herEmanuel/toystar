@@ -38,6 +38,7 @@ void init_idt() {
     remapPIC(0x20, 0x28);
 
     loadIdt((uint64_t)&idtDescriptor);
+    asm("sti");
 }
 
 // INTERRUPT HANDLERS

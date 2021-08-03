@@ -9,7 +9,7 @@
 
 struct Pagemap {
     uint64_t* pml4;
-}
+};
 
 class VMM {
     struct Pagemap* currentPagemap;
@@ -23,8 +23,8 @@ public:
     void unmapPage(uint64_t virt);
     void unmapRange(uint64_t virt, size_t count);
     Pagemap* newPagemap();
-    void switchPagemap(struct Pagemap pagemap);
+    void switchPagemap(struct Pagemap* pagemap);
     void flushTlb();
-}
+};
 
 #endif

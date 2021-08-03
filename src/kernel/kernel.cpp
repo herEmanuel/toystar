@@ -7,6 +7,7 @@
 #include "paging/pmm.h"
 #include "x86_64/gdt.h"
 #include "x86_64/idt.h"
+#include "drivers/keyboard.h"
 
 void* getTag(stivale2_struct* firstTag, uint64_t tagId) {
     stivale2_tag *currentTag = (stivale2_tag*)firstTag->tags;
@@ -47,18 +48,9 @@ extern "C" void _start(stivale2_struct* stivale2) {
     init_idt();
     kprint("IDT loaded\n");
 
-    PMM::init(memmapInfo->memmap, memmapInfo->entries);
-    
-    void* teste = PMM::alloc(1);  
-    void* teste2 = PMM::alloc(1);  
-    PMM::free(teste, 1);
-    void* teste3 = PMM::alloc(1);  
-    kprint("ended :(\n");
+    registerInterruptHandler(0x21, (uint64_t)&keyboard_handler, 0x8E, 0);
 
-    // for (int i = 0; i < 10; i++) {
-    //     kprint((size_t)pmmAlloc(1));
-    //     kprint("\n");
-    // }
+    PMM::init(memmapInfo->memmap, memmapInfo->entries);
 
     while(true)
         asm ("hlt");

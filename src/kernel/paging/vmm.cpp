@@ -24,7 +24,7 @@ uint64_t* VMM::getNextLevel(uint64_t* currLevelPtr, uint16_t entry) {
         return (uint64_t*)allocated; 
     }
 
-    return (uint64_t*)currLevelPtr[entry] & 0xfffffffffffff000;
+    return (uint64_t*)(currLevelPtr[entry] & 0xfffffffffffff000);
 }
 
 
@@ -46,7 +46,7 @@ void VMM::mapPage(uint64_t virt, uint64_t phys, uint16_t flags) {
 void VMM::mapRange(uint64_t virt, uint64_t phys, size_t count) {
     //TODO: test
     for (size_t i = 0; i < count * PAGE_SIZE; i +=  PAGE_SIZE) {
-        mapPage(virt+i, phys+i);
+        mapPage(virt+i, phys+i, 0b111);
     }
 }
 
@@ -61,18 +61,18 @@ void VMM::unmapRange(uint64_t virt, size_t count) {
 }
 
 Pagemap* VMM::newPagemap() {
-    struct Pagemap newPagemap;
+    struct Pagemap* newPagemap;
     //TODO: use heap?
-    newPagemap.pml4 = (uint64_t*)PMM::alloc(1);
+    newPagemap->pml4 = (uint64_t*)PMM::alloc(1);
     return newPagemap;
 }
 
-void VMM::switchPagemap(struct Pagemap pagemap) {
+void VMM::switchPagemap(struct Pagemap* pagemap) {
     currentPagemap = pagemap;
 
     asm volatile (
         "mov %0, %%cr3"
         :
-        : "r"(pagemap.pml4)
+        : "r"(pagemap->pml4)
     );
 }

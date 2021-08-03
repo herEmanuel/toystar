@@ -87,10 +87,10 @@ namespace PMM {
                         }
                     }
 
-                    void* addr = page * PAGE_SIZE;
-                    memset(addr + PHYSICAL_BASE_ADDRESS, 0, count * PAGE_SIZE);
+                    uint64_t addr = page * PAGE_SIZE;
+                    memset((void*)addr + PHYSICAL_BASE_ADDRESS, 0, count * PAGE_SIZE);
 
-                    return addr;
+                    return (void*)addr;
                 } 
             } else {
                 currentCount = 0;

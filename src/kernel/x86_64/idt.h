@@ -2,6 +2,7 @@
 #define IDT_H
 
 #include <stdint.h>
+#include <stddef.h>
 
 #define __INTERRUPT__ __attribute__((interrupt))
 
@@ -22,7 +23,7 @@ struct IDTGate {
     uint32_t zero;
 } __attribute__((packed));  
 
-IDTGate encodeIDTGate(uint64_t addr, uint8_t gateType, uint16_t cSelector, uint8_t ist);
+void registerInterruptHandler(size_t index, uint64_t addr, uint8_t gateType, uint8_t ist);
 void init_idt();
 
 #endif

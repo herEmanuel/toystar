@@ -7,7 +7,10 @@ OS = toystar.elf
 all: $(ISO_IMAGE)
 
 run: $(ISO_IMAGE)
-	qemu-system-x86_64.exe -serial file:CON -M q35 -m 2G -cdrom $(ISO_IMAGE)
+	qemu-system-x86_64.exe -M q35 -m 2G -cdrom $(ISO_IMAGE)
+
+test: 
+	qemu-system-x86_64.exe -d int -M smm=off -M q35 -m 2G -cdrom $(ISO_IMAGE)
 
 limine:
 	git clone https://github.com/limine-bootloader/limine.git --branch=v2.0-branch-binary --depth=1
