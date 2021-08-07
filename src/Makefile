@@ -38,9 +38,6 @@ $(OS_NAME): $(objs)
 ../obj/%.o: %.s | $(dirs)
 	$(ASM) $< -o $@
 
-# obj/kernel/interrupts/interrupts.o: src/kernel/interrupts/interrupts.cpp
-# 	$(CC) -c $< -o $@ $(CFLAGS) -mgeneral-regs-only -mno-80387
-
 ../obj/%.o: %.cpp $(STIVALE_PATH) | dirs
 	$(CC) -c $< -o $@ $(CFLAGS)
 
@@ -49,7 +46,7 @@ stivale2.h:
 
 dirs:
 	mkdir -p $(shell dirname $(objs))
-# rm -rf ../obj
+
 clean:
 	rm -f $(OS_NAME).elf
 
