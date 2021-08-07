@@ -4,7 +4,9 @@
 #include <libc/strings.h>
 #include <libc/memory.h>
 #include "vga.h"
-#include "paging/pmm.h"
+#include "memory/pmm.h"
+#include "memory/vmm.h"
+#include "memory/heap.h"
 #include "x86_64/gdt.h"
 #include "x86_64/idt.h"
 #include "drivers/keyboard.h"
@@ -51,6 +53,20 @@ extern "C" void _start(stivale2_struct* stivale2) {
     registerInterruptHandler(0x21, (uint64_t)&keyboard_handler, 0x8E, 0);
 
     PMM::init(memmapInfo->memmap, memmapInfo->entries);
+    VMM vmm;
+    vmm.init();
+
+    //TODO: keep testing the vmm
+
+    BuddyAllocator buddy;
+    buddy.init();
+
+    for (int i = 20; i > 5; i--) {
+        buddy.splitBlock(i);
+    }
+
+    kprint((size_t)buddy.bucketList[15]);
+    kprint((size_t)buddy.bucketList[15]->next);
 
     while(true)
         asm ("hlt");
