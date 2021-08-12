@@ -1,9 +1,9 @@
-#include "vga.h"
-#include "font.h"
-#include <libc/strings.h>
-#include <libc/memory.h>
+#include "video.hpp"
+#include "font.hpp"
+#include <libc/strings.hpp>
+#include <libc/memory.hpp>
 #include <stdint.h>
-#include <boot/stivale2.h>
+#include <boot/stivale2.hpp>
 
 static uint32_t* frameBuffer;
 static uint16_t pitch;
@@ -94,6 +94,37 @@ void kprint(const char* msg) {
 
     if (cursor_x > 0) { incrementCursorX(10); } 
 }
+
+template<typename T>
+void print_int(T value) {
+    const char* msg = itoa(value, 10);
+
+    kprint(msg);
+}
+
+// template<typename T, typename... Args>
+// void kprint(const char* msg, T value, Args... args) {
+//     size_t i = 0;
+    
+//     while (msg[i]) {
+//         if (msg[i] == '%') {
+//             switch (msg[++i]) {
+//                 case 'd':
+//                 case 'i':
+//                     print_int(value);
+//                     break;
+
+//                 default:
+//                     break;
+//             }
+//         }
+
+//         printChar(msg[i], 0xffffff);
+//         i++;
+//     }
+
+//     if (cursor_x > 0) { incrementCursorX(10); } 
+// }
 
 void kprint(size_t num) {
     const char* msg = itoa(num, 16);

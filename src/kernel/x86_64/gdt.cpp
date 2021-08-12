@@ -1,4 +1,4 @@
-#include "gdt.h"
+#include "gdt.hpp"
 #include <stdint.h>
 
 extern "C" void loadGdt(uint64_t);

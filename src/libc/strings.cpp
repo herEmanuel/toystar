@@ -1,4 +1,4 @@
-#include "strings.h"
+#include "strings.hpp"
 #include <stddef.h>
 
 char charBuffer[20];
@@ -7,7 +7,7 @@ const char* itoa(size_t number, size_t base) {
     size_t i = 0;
     size_t c = 0;
 
-    if (number == 0 || base != 16 && base != 10) {
+    if (number == 0 || (base != 16 && base != 10)) {
         return "0\0";
     }
 

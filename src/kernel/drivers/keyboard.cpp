@@ -1,9 +1,10 @@
-#include "keyboard.h"
-#include <kernel/io.h>
-#include <kernel/vga.h>
-#include <kernel/x86_64/idt.h>
-#include <kernel/x86_64/pic.h>
-#include <libc/strings.h>
+#include "keyboard.hpp"
+#include <kernel/io.hpp>
+#include <kernel/video.hpp>
+#include <kernel/x86_64/idt.hpp>
+#include <kernel/x86_64/pic.hpp>
+#include <libc/strings.hpp>
+
 #include <stdint.h>
 
 /* PS/2 keyboard driver */

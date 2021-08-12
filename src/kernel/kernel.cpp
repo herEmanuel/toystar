@@ -1,15 +1,15 @@
 #include <stdint.h>
 #include <stddef.h>
-#include <boot/stivale2.h>
-#include <libc/strings.h>
-#include <libc/memory.h>
-#include "vga.h"
-#include "memory/pmm.h"
-#include "memory/vmm.h"
-#include "memory/heap.h"
-#include "x86_64/gdt.h"
-#include "x86_64/idt.h"
-#include "drivers/keyboard.h"
+#include <boot/stivale2.hpp>
+#include <libc/strings.hpp>
+#include <libc/memory.hpp>
+#include "video.hpp"
+#include "memory/pmm.hpp"
+#include "memory/vmm.hpp"
+#include "memory/heap.hpp"
+#include "x86_64/gdt.hpp"
+#include "x86_64/idt.hpp"
+#include "drivers/keyboard.hpp"
 
 void* getTag(stivale2_struct* firstTag, uint64_t tagId) {
     stivale2_tag *currentTag = (stivale2_tag*)firstTag->tags;
@@ -60,14 +60,53 @@ extern "C" void _start(stivale2_struct* stivale2) {
 
     BuddyAllocator buddy;
     buddy.init();
+    
+    // buddy.splitBlock(20);
+    // buddy.splitBlock(19);
+    // buddy.splitBlock(19);
+    
+    // buddy.splitBlock(18);
 
-    for (int i = 20; i > 5; i--) {
-        buddy.splitBlock(i);
-    }
+    // kprint((size_t)buddy.bucketList[15]);
+    // kprint((size_t)buddy.bucketList[15]->next);
 
-    kprint((size_t)buddy.bucketList[15]);
-    kprint((size_t)buddy.bucketList[15]->next);
+    // kprint("-------------------------------------------\n");
+
+    // Block* curr = buddy.bucketList[2];
+
+    // while (curr != nullptr) {
+    //     kprint((size_t)curr);
+    //     kprint("\n");
+    //     curr = curr->next;
+    // }
+
+    // buddy.findBuddy(18, 0);
+
+    kprint("allocated address: ");
+    kprint("\n");
+
+    void* addr = buddy.kmalloc(40);
+    kprint((size_t)addr);
+    kprint("\n");
+
+    void* teste = buddy.kmalloc(1024*1024);
+    kprint((size_t)teste);
+    kprint("\n");
+
+    teste = buddy.kmalloc(1024*1024/2 - sizeof(Block));
+    kprint((size_t)teste);
+    kprint("\n");
+
+    buddy.kfree(teste);
+
+    buddy.kmalloc(3536);
+
+    kprint("teste: %x\n", 345);
+    kprint("one more thing: %s\n", "hi!");
 
     while(true)
         asm ("hlt");
 }
+
+// 1mb 512kb 256kb 128kb 64kb 32kb 16kb 8kb 4kb 2kb 1kb 512b 256b 128b 64b 32b 16b
+         

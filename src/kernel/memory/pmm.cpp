@@ -1,9 +1,10 @@
-#include "pmm.h"
-#include <boot/stivale2.h>
-#include <kernel/vga.h>
-#include <libc/memory.h>
-#include <libc/math.h>
-#include <libc/strings.h>
+#include "pmm.hpp"
+#include <boot/stivale2.hpp>
+#include <kernel/video.hpp>
+#include <libc/memory.hpp>
+#include <libc/math.hpp>
+#include <libc/strings.hpp>
+
 #include <stdint.h>
 #include <stddef.h>
 

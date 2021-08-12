@@ -1,7 +1,9 @@
-#include "vmm.h"
-#include "pmm.h"
-#include <kernel/vga.h>
-#include <libc/strings.h>
+#include "vmm.hpp"
+#include "pmm.hpp"
+#include <kernel/video.hpp>
+#include <libc/strings.hpp>
+#include <kernel/x86_64/idt.hpp>
+
 #include <stddef.h>
 #include <stdint.h>
 
@@ -15,6 +17,8 @@ void VMM::init() {
     );
 
     currentPagemap->pml4 = (uint64_t*) (pml4 + PHYSICAL_BASE_ADDRESS);
+
+    registerInterruptHandler(0xE, (uint64_t)&page_fault_handler, 0x8E, 0);
 }
 
 uint64_t* VMM::getNextLevel(uint64_t* currLevelPtr, uint16_t entry) {
@@ -99,4 +103,14 @@ void VMM::switchPagemap(struct Pagemap* pagemap) {
 
 void VMM::invlpg(uint64_t addr) {
     asm volatile ("invlpg (%0)" :: "r"(addr));
+}
+
+__INTERRUPT__ void page_fault_handler(interrupt_frame* frame, uint64_t errCode) {
+    kprint("Page fault!");
+
+    kprint("Error code: ");
+    kprint(errCode);
+
+    while(true)
+        asm("hlt");
 }

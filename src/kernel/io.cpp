@@ -1,4 +1,4 @@
-#include "io.h"
+#include "io.hpp"
 
 uint8_t inb(uint16_t port) {
     uint8_t byte;

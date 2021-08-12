@@ -1,5 +1,5 @@
-#include "pic.h"
-#include <kernel/io.h>
+#include "pic.hpp"
+#include <kernel/io.hpp>
 
 void remapPIC(size_t vecOffset1, size_t vecOffset2) {
     outb(MASTER_COMMAND, 0x11);

@@ -17,7 +17,7 @@ LFLAGS := -ffreestanding -nostdlib -lgcc -pie -fPIC
 
 OS_NAME := toystar
 LINKER := kernel/linker.ld
-STIVALE_PATH = boot/stivale2.h
+STIVALE_PATH = boot/stivale2.hpp
 
 src := $(shell find -name '*.cpp')
 

@@ -6,7 +6,11 @@
 
 #define __INTERRUPT__ __attribute__((interrupt))
 
-struct interrupt_frame;
+struct interrupt_frame {
+    uint64_t rip;
+    uint64_t cs;
+    uint64_t rflags;
+};
 
 struct IDTDescriptor {
     uint16_t limit;

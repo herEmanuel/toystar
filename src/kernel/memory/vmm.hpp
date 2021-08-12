@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <kernel/x86_64/idt.hpp>
 
 #define PAGE_SIZE 4096
 #define PHYSICAL_BASE_ADDRESS 0xffff800000000000
@@ -27,5 +28,7 @@ public:
     void switchPagemap(struct Pagemap* pagemap);
     void invlpg(uint64_t addr);
 };
+
+__INTERRUPT__ void page_fault_handler(interrupt_frame* frame, uint64_t errCode);
 
 #endif

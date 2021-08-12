@@ -1,7 +1,7 @@
 #ifndef PMM_H
 #define PMM_H
 
-#include <boot/stivale2.h>
+#include <boot/stivale2.hpp>
 #include <stdint.h>
 #include <stddef.h>
 

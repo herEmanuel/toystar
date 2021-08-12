@@ -1,9 +1,9 @@
-#include "idt.h"
-#include "pic.h"
+#include "idt.hpp"
+#include "pic.hpp"
 #include <stdint.h>
 #include <stddef.h>
-#include <kernel/vga.h>
-#include <libc/memory.h>
+#include <kernel/video.hpp>
+#include <libc/memory.hpp>
 
 //TODO: configure PIC or maybe APIC
 
