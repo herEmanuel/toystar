@@ -1,11 +1,12 @@
 # Toystar
 
+![Toystar screenshot](/os.png?raw=true "Toystar screenshot")
+
 Toystar is a 64 bits operating system made with the sole purpose of learning and having fun. It is currently in early development and still lacks a lot of features.
 
 ### Features being worked on/planned
 
-- VMM
-- A buddy allocator for the kernel (kmalloc, kfree and krealloc)
+- PCI
 - Ext2 or FAT32 filesystem
 - AHCI driver
 - Preemptive multitasking scheduler

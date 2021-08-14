@@ -15,14 +15,10 @@ void putPixel(uint16_t x, uint16_t y, uint32_t color);
 void rect(uint16_t x, uint16_t y, uint16_t sizeX, uint16_t sizeY, uint32_t color);
 
 void printChar(char c, uint32_t color);
+
 void kprint(const char* msg);
 void kprint(size_t num);
-
-template<typename T>
-void print_num(T number, size_t base) {
-    const char* msg = itoa(number, base);
-    kprint(msg);
-}
+void kprint(size_t num, size_t base);
 
 template<typename T, typename... Args>
 void kprint(const char* msg, T value, Args... args) {
@@ -33,8 +29,7 @@ void kprint(const char* msg, T value, Args... args) {
             switch (msg[++i]) {
                 case 'd':
                 case 'i':
-                    kprint(value);
-                    // print_num(value, 10);
+                    kprint(value, 10);
                     break;
 
                 case 's':
@@ -42,8 +37,7 @@ void kprint(const char* msg, T value, Args... args) {
                     break;
 
                 case 'x':
-                    kprint(value);
-                    // print_num(value, 16);
+                    kprint(value, 16);
                     break;
 
                 case '%':
@@ -54,13 +48,14 @@ void kprint(const char* msg, T value, Args... args) {
                     break;
             }
             i++;
+            
+            kprint(msg + i, args...);
+            return;
         }
 
         printChar(msg[i], 0xffffff);
         i++;
     }
-
-    // if (cursor_x > 0) { incrementCursorX(10); } 
 }
 
 #endif

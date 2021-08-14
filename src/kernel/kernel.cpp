@@ -3,13 +3,14 @@
 #include <boot/stivale2.hpp>
 #include <libc/strings.hpp>
 #include <libc/memory.hpp>
-#include "video.hpp"
+#include "drivers/keyboard.hpp"
 #include "memory/pmm.hpp"
 #include "memory/vmm.hpp"
 #include "memory/heap.hpp"
 #include "x86_64/gdt.hpp"
 #include "x86_64/idt.hpp"
-#include "drivers/keyboard.hpp"
+#include "video.hpp"
+#include "pci.hpp"
 
 void* getTag(stivale2_struct* firstTag, uint64_t tagId) {
     stivale2_tag *currentTag = (stivale2_tag*)firstTag->tags;
@@ -35,14 +36,11 @@ extern "C" void _start(stivale2_struct* stivale2) {
     memmapInfo = (stivale2_struct_tag_memmap*)getTag(stivale2, STIVALE2_STRUCT_TAG_MEMMAP_ID);
 
     video_init(frameBufferInfo);
+    
     kprint("Kernel loaded!\n");
     kprint("---RESOLUTION---\n");
-    kprint("Width: ");
-    kprint(itoa(frameBufferInfo->framebuffer_width, 10));
-    kprint("\n");
-    kprint("Height: ");
-    kprint(itoa(frameBufferInfo->framebuffer_height, 10));
-    kprint("\n");
+    kprint("Width: %d\n", frameBufferInfo->framebuffer_width);
+    kprint("Height: %d\n", frameBufferInfo->framebuffer_height);
 
     init_gdt();
     kprint("GDT loaded\n");
@@ -55,6 +53,8 @@ extern "C" void _start(stivale2_struct* stivale2) {
     PMM::init(memmapInfo->memmap, memmapInfo->entries);
     VMM vmm;
     vmm.init();
+
+    kprint("VMM and PMM initialized\n");
 
     //TODO: keep testing the vmm
 
@@ -82,27 +82,23 @@ extern "C" void _start(stivale2_struct* stivale2) {
 
     // buddy.findBuddy(18, 0);
 
-    kprint("allocated address: ");
-    kprint("\n");
+    // void* addr = buddy.kmalloc(40);
+    // kprint((size_t)addr);
+    // kprint("\n");
 
-    void* addr = buddy.kmalloc(40);
-    kprint((size_t)addr);
-    kprint("\n");
+    // void* teste = buddy.kmalloc(1024*1024);
+    // kprint((size_t)teste);
+    // kprint("\n");
 
-    void* teste = buddy.kmalloc(1024*1024);
-    kprint((size_t)teste);
-    kprint("\n");
+    // teste = buddy.kmalloc(1024*1024/2 - sizeof(Block));
+    // kprint((size_t)teste);
+    // kprint("\n");
 
-    teste = buddy.kmalloc(1024*1024/2 - sizeof(Block));
-    kprint((size_t)teste);
-    kprint("\n");
+    // buddy.kfree(teste);
 
-    buddy.kfree(teste);
+    // buddy.kmalloc(3536);
 
-    buddy.kmalloc(3536);
-
-    kprint("teste: %x\n", 345);
-    kprint("one more thing: %s\n", "hi!");
+    PCI::enumerateDevices();
 
     while(true)
         asm ("hlt");

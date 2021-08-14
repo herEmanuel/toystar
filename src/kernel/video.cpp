@@ -91,42 +91,14 @@ void kprint(const char* msg) {
         printChar(msg[i], 0xffffff);
         i++;
     }
-
-    if (cursor_x > 0) { incrementCursorX(10); } 
 }
-
-template<typename T>
-void print_int(T value) {
-    const char* msg = itoa(value, 10);
-
-    kprint(msg);
-}
-
-// template<typename T, typename... Args>
-// void kprint(const char* msg, T value, Args... args) {
-//     size_t i = 0;
-    
-//     while (msg[i]) {
-//         if (msg[i] == '%') {
-//             switch (msg[++i]) {
-//                 case 'd':
-//                 case 'i':
-//                     print_int(value);
-//                     break;
-
-//                 default:
-//                     break;
-//             }
-//         }
-
-//         printChar(msg[i], 0xffffff);
-//         i++;
-//     }
-
-//     if (cursor_x > 0) { incrementCursorX(10); } 
-// }
 
 void kprint(size_t num) {
     const char* msg = itoa(num, 16);
+    kprint(msg);
+}
+
+void kprint(size_t num, size_t base) {
+    const char* msg = itoa(num, base);
     kprint(msg);
 }
