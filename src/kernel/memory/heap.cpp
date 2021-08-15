@@ -90,9 +90,7 @@ bool BuddyAllocator::splitBlock(size_t order) {
 }
 
 bool BuddyAllocator::tryToMerge(size_t order) {
-    kprint("MERGING ORDER ");
-    kprint(order);
-    kprint("\n");
+    kprint("MERGING ORDER: %d\n", order);
 
     if (order > MAX_POWER) {
         return false;
@@ -180,6 +178,8 @@ void* BuddyAllocator::kmalloc(size_t bytes) {
     Block* allocated = bucketList[index];
     bucketList[index] = allocated->next;
 
+    allocated->next = nullptr;
+
     return (void*)allocated + sizeof(Block);
 }
 
@@ -191,15 +191,32 @@ void BuddyAllocator::kfree(void* ptr) {
     Block* block = (Block*) (ptr - sizeof(Block));
     size_t order = 4;
     
-    kprint(block->size);
-
     while ((1 << order++) < block->size);
     order--;
 
-    kprint(order);
-
     size_t index = indexFromOrder(order);
+   
+    block->next = bucketList[index];
     bucketList[index] = block;
 
     while (order < MAX_POWER && tryToMerge(order++));
+}
+
+void* BuddyAllocator::krealloc(void* ptr, size_t bytes) {
+    if ((uint64_t) ptr < baseAddr || 
+        (uint64_t) ptr > baseAddr + (1 << MAX_POWER)) 
+        return nullptr;
+    
+    Block* block = (Block*) (ptr - sizeof(Block));
+
+    void* newPtr = kmalloc(bytes);
+
+    if (bytes > block->size) {
+        memcpy(newPtr, ptr, block->size);
+    } else {
+        memcpy(newPtr, ptr, bytes);
+    }
+
+    kfree(ptr);
+    return newPtr;
 }

@@ -58,45 +58,8 @@ extern "C" void _start(stivale2_struct* stivale2) {
 
     //TODO: keep testing the vmm
 
-    BuddyAllocator buddy;
-    buddy.init();
-    
-    // buddy.splitBlock(20);
-    // buddy.splitBlock(19);
-    // buddy.splitBlock(19);
-    
-    // buddy.splitBlock(18);
-
-    // kprint((size_t)buddy.bucketList[15]);
-    // kprint((size_t)buddy.bucketList[15]->next);
-
-    // kprint("-------------------------------------------\n");
-
-    // Block* curr = buddy.bucketList[2];
-
-    // while (curr != nullptr) {
-    //     kprint((size_t)curr);
-    //     kprint("\n");
-    //     curr = curr->next;
-    // }
-
-    // buddy.findBuddy(18, 0);
-
-    // void* addr = buddy.kmalloc(40);
-    // kprint((size_t)addr);
-    // kprint("\n");
-
-    // void* teste = buddy.kmalloc(1024*1024);
-    // kprint((size_t)teste);
-    // kprint("\n");
-
-    // teste = buddy.kmalloc(1024*1024/2 - sizeof(Block));
-    // kprint((size_t)teste);
-    // kprint("\n");
-
-    // buddy.kfree(teste);
-
-    // buddy.kmalloc(3536);
+    BuddyAllocator* buddy = (BuddyAllocator*) PMM::alloc(1); //??
+    buddy->init();
 
     PCI::enumerateDevices();
 
