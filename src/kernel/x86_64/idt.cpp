@@ -2,8 +2,8 @@
 #include "pic.hpp"
 #include <stdint.h>
 #include <stddef.h>
-#include <kernel/video.hpp>
-#include <libc/memory.hpp>
+#include <video.hpp>
+#include <memory.hpp>
 
 //TODO: configure PIC or maybe APIC
 

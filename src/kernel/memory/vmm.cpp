@@ -1,8 +1,8 @@
 #include "vmm.hpp"
 #include "pmm.hpp"
-#include <kernel/video.hpp>
-#include <libc/strings.hpp>
-#include <kernel/x86_64/idt.hpp>
+#include <video.hpp>
+#include <strings.hpp>
+#include <x86_64/idt.hpp>
 
 #include <stddef.h>
 #include <stdint.h>

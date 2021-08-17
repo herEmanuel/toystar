@@ -5,6 +5,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
+//TODO: finish pci support when i actually need it 
+
 namespace PCI {
 
     void setAddress(uint8_t bus, uint8_t device, uint8_t function, uint8_t offset) {
@@ -44,7 +46,7 @@ namespace PCI {
                     if (!exists(bus, slot, function)) 
                         continue;
 
-                    kprint("Detected a device on bus %d, slot %d and function %d\n", bus, slot, function);
+                    // kprint("Detected a device on bus %d, slot %d and function %d\n", bus, slot, function);
 
                 }
             }

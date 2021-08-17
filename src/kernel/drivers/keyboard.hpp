@@ -1,7 +1,7 @@
 #ifndef KEYBOARD_H
 #define KEYBOARD_H
 
-#include <kernel/x86_64/idt.hpp>
+#include <x86_64/idt.hpp>
 #include <stdint.h>
 
 #define MAX_SCANCODE 0x59

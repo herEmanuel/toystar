@@ -1,5 +1,6 @@
 /limine
 /obj
 /iso_root
+/.vscode
 *.elf
 *.iso

@@ -1,7 +1,7 @@
 #include "video.hpp"
 #include "font.hpp"
-#include <libc/strings.hpp>
-#include <libc/memory.hpp>
+#include <strings.hpp>
+#include <memory.hpp>
 #include <stdint.h>
 #include <boot/stivale2.hpp>
 
@@ -49,7 +49,11 @@ void rect(uint16_t x, uint16_t y, uint16_t sizeX, uint16_t sizeY, uint32_t color
     cursor_y = 0;
 }
 
-void video_init(stivale2_struct_tag_framebuffer* frameBufferTag) {
+void clearScreen(uint32_t color) {
+    rect(0, 0, screen_width, screen_height, color);
+}
+
+void videoInit(stivale2_struct_tag_framebuffer* frameBufferTag) {
     frameBuffer = (uint32_t*)frameBufferTag->framebuffer_addr;
     pitch = frameBufferTag->framebuffer_pitch;
     bpp = frameBufferTag->framebuffer_bpp;

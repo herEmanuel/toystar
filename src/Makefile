@@ -1,7 +1,7 @@
 CC := x86_64-elf-g++.exe
 ASM := x86_64-elf-as.exe
 
-CFLAGS := -I . -ffreestanding -Wall -Wextra -fPIC \
+CFLAGS := -I . -I ./kernel -I ./klibc -ffreestanding -Wall -Wextra -fPIC \
 	-fno-exceptions      \
 	-fno-rtti			 \
 	-fno-stack-protector \

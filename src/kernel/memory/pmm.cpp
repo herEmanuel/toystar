@@ -1,9 +1,9 @@
 #include "pmm.hpp"
 #include <boot/stivale2.hpp>
-#include <kernel/video.hpp>
-#include <libc/memory.hpp>
-#include <libc/math.hpp>
-#include <libc/strings.hpp>
+#include <video.hpp>
+#include <memory.hpp>
+#include <math.hpp>
+#include <strings.hpp>
 
 #include <stdint.h>
 #include <stddef.h>

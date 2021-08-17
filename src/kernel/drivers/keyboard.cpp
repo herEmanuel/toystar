@@ -1,9 +1,9 @@
 #include "keyboard.hpp"
-#include <kernel/io.hpp>
-#include <kernel/video.hpp>
-#include <kernel/x86_64/idt.hpp>
-#include <kernel/x86_64/pic.hpp>
-#include <libc/strings.hpp>
+#include <io.hpp>
+#include <video.hpp>
+#include <x86_64/idt.hpp>
+#include <x86_64/pic.hpp>
+#include <strings.hpp>
 
 #include <stdint.h>
 

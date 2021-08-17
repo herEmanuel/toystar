@@ -68,3 +68,13 @@ size_t atoi(const char* str) {
 
     return num;
 }
+
+bool strcmp(const char* msg1, const char* msg2, size_t len) {
+    for (size_t i = 0; i < len; i++) {
+        if (msg1[i] != msg2[i]) {
+            return false;
+        }
+    }
+
+    return true;
+}

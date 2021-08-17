@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include <kernel/x86_64/idt.hpp>
+#include <x86_64/idt.hpp>
 
 #define PAGE_SIZE 4096
 #define PHYSICAL_BASE_ADDRESS 0xffff800000000000
