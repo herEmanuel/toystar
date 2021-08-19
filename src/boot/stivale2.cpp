@@ -5,9 +5,9 @@
 
 static uint8_t stack[4096];
 
-static struct stivale2_header_tag_terminal terminalTag = {
+static struct stivale2_header_tag_smp smpTag {
     .tag = {
-        .identifier = STIVALE2_HEADER_TAG_TERMINAL_ID,
+        .identifier = STIVALE2_HEADER_TAG_SMP_ID,
         .next = 0
     },
 
@@ -17,7 +17,7 @@ static struct stivale2_header_tag_terminal terminalTag = {
 static struct stivale2_header_tag_framebuffer framebufferTag = {
     .tag = {
         .identifier = STIVALE2_HEADER_TAG_FRAMEBUFFER_ID,
-        .next = (uint64_t)&terminalTag
+        .next = (uint64_t)&smpTag
     },
    
     .framebuffer_width  = 0,

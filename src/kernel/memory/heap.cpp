@@ -105,7 +105,7 @@ namespace Heap {
     }
 
     bool BuddyAllocator::tryToMerge(size_t order) {
-        kprint("MERGING ORDER: %d\n", order);
+        // kprint("MERGING ORDER: %d\n", order);
 
         if (order > MAX_POWER) {
             return false;

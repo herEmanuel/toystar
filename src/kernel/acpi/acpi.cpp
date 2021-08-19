@@ -1,4 +1,5 @@
 #include "acpi.hpp"
+#include "madt.hpp"
 #include <boot/stivale2.hpp>
 #include <memory/vmm.hpp>
 #include <video.hpp>

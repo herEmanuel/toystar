@@ -1,6 +1,7 @@
 #include <boot/stivale2.hpp>
 #include "x86_64/gdt.hpp"
 #include "x86_64/idt.hpp"
+#include "x86_64/apic.hpp"
 #include "memory/pmm.hpp"
 #include "memory/vmm.hpp"
 #include "memory/heap.hpp"
@@ -41,6 +42,9 @@ extern "C" void _start(stivale2_struct* stivale2) {
     stivale2_struct_tag_rsdp* rsdp;
     rsdp = (stivale2_struct_tag_rsdp*)getTag(stivale2, STIVALE2_STRUCT_TAG_RSDP_ID);
 
+    stivale2_struct_tag_smp* smpInfo;
+    smpInfo = (stivale2_struct_tag_smp*)getTag(stivale2, STIVALE2_STRUCT_TAG_SMP_ID);
+
     videoInit(frameBufferInfo);
     
     kprint("Kernel loaded!\n");
@@ -68,7 +72,11 @@ extern "C" void _start(stivale2_struct* stivale2) {
 
     PCI::enumerateDevices();
 
+    kprint("Cores: %d\n", smpInfo->cpu_count);
+
     Acpi::init(rsdp);
+
+    Apic::init();
 
     void* hpet = Acpi::findTable("HPET");
     kprint("Hpet: %x\n", (size_t)hpet);

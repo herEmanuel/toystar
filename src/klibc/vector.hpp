@@ -19,6 +19,13 @@ namespace toys {
 
             capacity = size;
         }
+
+        vector() {
+            isEmpty = true;
+            capacity = 0;
+            internalData = nullptr;
+        }
+
         ~vector() {
             delete[] internalData;
         }
@@ -37,7 +44,18 @@ namespace toys {
                 return;
             }
 
-            internalData =  reinterpret_cast<T*>(krealloc(internalData, sizeof(T)*elementAmount));
+            // internalData =  reinterpret_cast<T*>(krealloc(internalData, sizeof(T)*elementAmount));
+
+            T* oldData = internalData;
+            internalData = new T[elementAmount];
+
+            size_t t = (elementAmount > capacity) ? capacity : elementAmount;
+
+            for (size_t i = 0; i < t; i++) {
+                internalData[i] = oldData[i];
+            }
+
+            delete[] oldData;
 
             capacity = elementAmount;
 
@@ -47,13 +65,27 @@ namespace toys {
         }
 
         void push_back(const T value) {
-            internalData = reinterpret_cast<T*>(krealloc(internalData, sizeof(T)*capacity+1));
-        
-            internalData[capacity++] = value;
-
             if (isEmpty) {
+                internalData = new T;
+
+                internalData[capacity++] = value;
+
                 isEmpty = false;
+                return;
             }
+
+            // internalData = reinterpret_cast<T*>(krealloc(internalData, sizeof(T)*capacity+1));
+        
+            T* oldData = internalData;
+            internalData = new T[capacity+1];
+
+            for (size_t i = 0; i < capacity; i++) {
+                internalData[i] = oldData[i];
+            }
+
+            delete[] oldData;
+
+            internalData[capacity++] = value;
         }
 
         void pop_back() {
@@ -61,7 +93,16 @@ namespace toys {
                 return;
             }
 
-            internalData = reinterpret_cast<T*>(krealloc(internalData, sizeof(T)*capacity-1));
+            // internalData = reinterpret_cast<T*>(krealloc(internalData, sizeof(T)*capacity-1));
+
+            T* oldData = internalData;
+            internalData = new T[capacity-1];
+
+            for (size_t i = 0; i < capacity-1; i++) {
+                internalData[i] = oldData[i];
+            }
+
+            delete[] oldData;
 
             if (!(--capacity)) {
                 isEmpty = true;
