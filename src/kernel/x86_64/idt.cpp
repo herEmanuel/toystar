@@ -1,5 +1,4 @@
 #include "idt.hpp"
-#include "pic.hpp"
 #include <stdint.h>
 #include <stddef.h>
 #include <video.hpp>
@@ -35,10 +34,7 @@ void init_idt() {
 
     IDTDescriptor idtDescriptor = {sizeof(idt), (uint64_t)&idt};
 
-    remapPIC(0x20, 0x28);
-
     loadIdt((uint64_t)&idtDescriptor);
-    asm("sti");
 }
 
 // INTERRUPT HANDLERS

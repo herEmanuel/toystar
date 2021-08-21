@@ -8,7 +8,8 @@ enum Types {
     LAPIC,
     IOAPIC,
     IOAPIC_ISO,
-    IOAPIC_NMI
+    IOAPIC_NMI,
+    LAPIC_AO = 5
 };
 
 struct madt_table {
@@ -44,6 +45,12 @@ struct madt_iso {
     uint8_t irq;
     uint32_t gsi;
     uint16_t flags;
+};
+
+struct madt_addrOverride {
+    madt_header header;
+    uint16_t reserved;
+    uint64_t addr;
 };
 
 #endif

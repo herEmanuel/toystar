@@ -2,7 +2,7 @@
 #include <io.hpp>
 #include <video.hpp>
 #include <x86_64/idt.hpp>
-#include <x86_64/pic.hpp>
+#include <x86_64/apic.hpp>
 #include <strings.hpp>
 
 #include <stdint.h>
@@ -29,7 +29,7 @@ __INTERRUPT__ void keyboard_handler(interrupt_frame* frame) {
                 break;
         }
 
-        sendEOI(1);
+        Apic::localApic->eoi();
         return;
     }
 
@@ -37,12 +37,12 @@ __INTERRUPT__ void keyboard_handler(interrupt_frame* frame) {
         case LSHIFT:
         case RSHIFT:
             state.shift = true;
-            sendEOI(1);
+            Apic::localApic->eoi();
             return;
 
         case CAPS:
             state.caps = !state.caps;
-            sendEOI(1);
+            Apic::localApic->eoi();
             return;
 
         default:
@@ -62,5 +62,5 @@ __INTERRUPT__ void keyboard_handler(interrupt_frame* frame) {
     }
 
     printChar(buffer, 0xffffff);
-    sendEOI(1);
+    Apic::localApic->eoi();
 }

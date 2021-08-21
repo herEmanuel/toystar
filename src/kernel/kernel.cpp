@@ -9,6 +9,7 @@
 #include "video.hpp"
 #include "pci.hpp"
 #include "drivers/keyboard.hpp"
+#include "drivers/hpet.hpp"
 
 #include <stdint.h>
 #include <stddef.h>
@@ -78,8 +79,13 @@ extern "C" void _start(stivale2_struct* stivale2) {
 
     Apic::init();
 
-    void* hpet = Acpi::findTable("HPET");
-    kprint("Hpet: %x\n", (size_t)hpet);
+    Hpet::init();
+
+    kprint("see you in 2 seconds...\n");
+    Hpet::sleep(2000);
+    kprint("hey!\n");
+
+    asm("sti");
 
     while(true)
         asm ("hlt");
