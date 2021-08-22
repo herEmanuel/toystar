@@ -20,7 +20,7 @@ void incrementCursorX(uint16_t amount) {
         cursor_y += 18;
 
         if (cursor_y >= screen_height) {
-            rect(0, 0, screen_width, screen_height, 0x9061ff);
+            clearScreen(0x0);
         }
 
     }
@@ -60,7 +60,7 @@ void videoInit(stivale2_struct_tag_framebuffer* frameBufferTag) {
     screen_width = frameBufferTag->framebuffer_width;
     screen_height = frameBufferTag->framebuffer_height;
 
-    rect(0, 0, screen_width, screen_height, 0x9061ff);
+    clearScreen(0x0);
 }
 
 void printChar(char c, uint32_t color) {

@@ -8,7 +8,7 @@
 
 namespace Apic {
 
-    lapic* localApic = nullptr;
+    xapic* localApic = nullptr;
 
     void init() {
         madt_table* madtTable = reinterpret_cast<madt_table*>(Acpi::findTable("APIC"));
@@ -16,6 +16,7 @@ namespace Apic {
 
         size_t entries = madtTable->header.length - sizeof(sdt) - 8;
 
+        //TODO: some stuff here doesn't seem to be necessary...
         toys::vector<madt_lapic*> lapics;
         toys::vector<madt_ioapic*> ioapics;
         toys::vector<madt_iso*> isos;
@@ -86,39 +87,43 @@ namespace Apic {
         remapPIC(0x20, 0x28);
 
         if (addressOverride.size() != 0) {
-            localApic = new lapic(addressOverride[0]->addr);
+            localApic = new xapic(addressOverride[0]->addr);
         } else {
-            localApic = new lapic(madtTable->lapic_addr);
+            localApic = new xapic(madtTable->lapic_addr);
         }
+
+        asm("sti");
     }
 
-    lapic::lapic(uint64_t baseAddress) {
+    xapic::xapic(uint64_t baseAddress) {
         base_address = baseAddress + PHYSICAL_BASE_ADDRESS;
         enable();
     }
 
-    uint32_t lapic::read(uint16_t reg) {
+    uint32_t xapic::read(uint16_t reg) {
         return *reinterpret_cast<uint32_t*>(base_address + reg);
     }
 
-    void lapic::write(uint16_t reg, uint32_t value) {
+    void xapic::write(uint16_t reg, uint32_t value) {
         *reinterpret_cast<uint32_t*>(base_address + reg) = value;
     }
 
-    void lapic::enable() {
+    void xapic::enable() {
         //spurious interrupt is set to 0xFF, and 8-th bit (enable) is set
         write(LapicRegisters::SIVR, read(LapicRegisters::SIVR) | 0x1FF);
     }
 
-    void lapic::calibrate_timer() {
+    //TODO: implement it
+    void xapic::calibrate_timer() {
 
     }
 
-    void lapic::send_ipi(uint8_t apic, uint64_t ipi) {
+    //TODO: implement it
+    void xapic::send_ipi(uint8_t apic, uint64_t ipi) {
 
     }
 
-    void lapic::eoi() {
+    void xapic::eoi() {
         write(LapicRegisters::EOI, 0);
     }
 

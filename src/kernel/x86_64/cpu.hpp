@@ -1,9 +1,9 @@
-#ifndef TSS_H
-#define TSS_H
+#ifndef CPU_H
+#define CPU_H
 
 #include <stdint.h>
-
-//TODO: make it work 
+#include <stddef.h>
+#include <boot/stivale2.hpp>
 
 struct TSS {
     uint32_t reserved0;
@@ -21,5 +21,22 @@ struct TSS {
     uint64_t reserved3;
     uint32_t iobm; //TODO: still don't know exactly what this is
 } __attribute__((packed));
+
+struct cpuid_return {
+    uint64_t rax;
+    uint64_t rbx;
+    uint64_t rcx;
+    uint64_t rdx;
+};
+
+namespace Cpu {
+    
+    cpuid_return cpuid(uint32_t eax, uint32_t ecx);
+    void halt();
+    void init_features();
+    void bootstrap_cores(stivale2_struct_tag_smp* smpInfo);
+    void core_init();
+    
+}
 
 #endif

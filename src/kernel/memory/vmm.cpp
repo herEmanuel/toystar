@@ -8,7 +8,7 @@
 #include <stdint.h>
 
 //TODO: make my own pml4 
-void VMM::init() {
+VMM::VMM() {
     uint64_t pml4;
 
     asm volatile (

@@ -2,6 +2,7 @@
 #include "x86_64/gdt.hpp"
 #include "x86_64/idt.hpp"
 #include "x86_64/apic.hpp"
+#include "x86_64/cpu.hpp"
 #include "memory/pmm.hpp"
 #include "memory/vmm.hpp"
 #include "memory/heap.hpp"
@@ -49,9 +50,6 @@ extern "C" void _start(stivale2_struct* stivale2) {
     videoInit(frameBufferInfo);
     
     kprint("Kernel loaded!\n");
-    kprint("---RESOLUTION---\n");
-    kprint("Width: %d\n", frameBufferInfo->framebuffer_width);
-    kprint("Height: %d\n", frameBufferInfo->framebuffer_height);
 
     init_gdt();
     kprint("GDT loaded\n");
@@ -63,7 +61,6 @@ extern "C" void _start(stivale2_struct* stivale2) {
 
     PMM::init(memmapInfo->memmap, memmapInfo->entries);
     VMM vmm;
-    vmm.init();
 
     kprint("VMM and PMM initialized\n");
 
@@ -71,7 +68,7 @@ extern "C" void _start(stivale2_struct* stivale2) {
 
     Heap::init();
 
-    PCI::enumerateDevices();
+    // PCI::enumerateDevices();
 
     kprint("Cores: %d\n", smpInfo->cpu_count);
 
@@ -81,15 +78,7 @@ extern "C" void _start(stivale2_struct* stivale2) {
 
     Hpet::init();
 
-    kprint("see you in 2 seconds...\n");
-    Hpet::sleep(2000);
-    kprint("hey!\n");
+    Cpu::bootstrap_cores(smpInfo);
 
-    asm("sti");
-
-    while(true)
-        asm ("hlt");
+    Cpu::halt();
 }
-
-// 1mb 512kb 256kb 128kb 64kb 32kb 16kb 8kb 4kb 2kb 1kb 512b 256b 128b 64b 32b 16b
-         

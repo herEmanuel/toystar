@@ -16,13 +16,13 @@ namespace Apic {
         TPR = 0x80
     };
 
-    class lapic {
+    class xapic {
         uint64_t base_address;
         uint8_t lapic_id;
 
     public:
 
-        lapic(uint64_t baseAddress);
+        xapic(uint64_t baseAddress);
 
         void write(uint16_t reg, uint32_t value);
         uint32_t read(uint16_t reg);
@@ -55,7 +55,7 @@ namespace Apic {
 
     };
 
-    extern lapic* localApic;
+    extern xapic* localApic;
 }
 
 #endif

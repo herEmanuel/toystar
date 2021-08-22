@@ -16,9 +16,8 @@ class VMM {
     struct Pagemap* currentPagemap;
 
     uint64_t* getNextLevel(uint64_t* currLevelPtr, uint16_t entry);
-    
 public:
-    void init();
+    VMM();
     void mapPage(uint64_t virt, uint64_t phys, uint16_t flags);
     void mapRange(uint64_t virt, uint64_t phys, size_t count);
     void unmapPage(uint64_t virt);
