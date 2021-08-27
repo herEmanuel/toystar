@@ -10,7 +10,7 @@ extern "C" void loadIdt(uint64_t);
 
 __INTERRUPT__ void division_by_zero_handler(interrupt_frame* intFrame);
 __INTERRUPT__ void double_fault_handler(interrupt_frame* intFrame);
-__INTERRUPT__ void general_protection_handler(interrupt_frame* intFrame);
+__INTERRUPT__ void general_protection_handler(interrupt_frame* intFrame, uint64_t errCode);
 
 static IDTGate idt[256];
 
@@ -49,8 +49,11 @@ __INTERRUPT__ void double_fault_handler(interrupt_frame* intFrame) {
     while(true)
         asm("hlt");
 }
-__INTERRUPT__ void general_protection_handler(interrupt_frame* intFrame) {
+__INTERRUPT__ void general_protection_handler(interrupt_frame* intFrame, uint64_t errCode) {
     kprint("General protection exception!");
+
+    kprint("Error code: %x\n", errCode);
+
     while(true)
         asm("hlt");
 }

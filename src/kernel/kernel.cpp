@@ -34,6 +34,8 @@ void* getTag(stivale2_struct* firstTag, uint64_t tagId) {
     }
 }
 
+extern "C" void _init();
+
 extern "C" void _start(stivale2_struct* stivale2) {
     stivale2_struct_tag_framebuffer* frameBufferInfo;
     frameBufferInfo = (stivale2_struct_tag_framebuffer*)getTag(stivale2, STIVALE2_STRUCT_TAG_FRAMEBUFFER_ID);
@@ -46,6 +48,8 @@ extern "C" void _start(stivale2_struct* stivale2) {
 
     stivale2_struct_tag_smp* smpInfo;
     smpInfo = (stivale2_struct_tag_smp*)getTag(stivale2, STIVALE2_STRUCT_TAG_SMP_ID);
+
+    _init();
 
     videoInit(frameBufferInfo);
     
@@ -60,23 +64,33 @@ extern "C" void _start(stivale2_struct* stivale2) {
     registerInterruptHandler(0x21, (uint64_t)&keyboard_handler, 0x8E, 0);
 
     PMM::init(memmapInfo->memmap, memmapInfo->entries);
-    VMM vmm;
-
-    kprint("VMM and PMM initialized\n");
-
-    //TODO: keep testing the vmm
 
     Heap::init();
+
+    //TODO: keep testing the vmm
+    VMM::init();
+
+    kprint("VMM and PMM initialized\n");
 
     // PCI::enumerateDevices();
 
     kprint("Cores: %d\n", smpInfo->cpu_count);
 
+    kprint("acpi init addr: %x\n", (uint64_t)&Acpi::init);
+
     Acpi::init(rsdp);
+
+    kprint("got acpi\n");
+
+    kprint("apic init addr: %x\n", (uint64_t)&Apic::init);
 
     Apic::init();
 
+    kprint("got apic\n");
+
     Hpet::init();
+
+    kprint("got here\n");
 
     Cpu::bootstrap_cores(smpInfo);
 

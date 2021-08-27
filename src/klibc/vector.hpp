@@ -4,6 +4,7 @@
 #include "memory/heap.hpp"
 #include <video.hpp>
 #include <stddef.h>
+#include <utils.hpp>
 
 namespace toys {
 
@@ -31,20 +32,31 @@ namespace toys {
         }
 
         T& operator[](size_t i) {
-            if (i < 0 || i >= capacity)  {
-                kprint("shit, array out of bounds\n");
-                // return nullptr;
+            if (i >= capacity)  {
+                Toystar::utils::panic("vector out of bounds");
             }
 
             return internalData[i];
         }
 
         void resize(size_t elementAmount) {
-            if (elementAmount == capacity) {
+            if (elementAmount == capacity) 
+                return;
+
+            if (!elementAmount) {
+                delete[] internalData;
+                internalData = nullptr;
+                isEmpty = true;
+                capacity = 0;
+                return;
+            } 
+
+            if (isEmpty) {
+                internalData = new T[elementAmount];
+                isEmpty = false;
+                capacity = elementAmount;
                 return;
             }
-
-            // internalData =  reinterpret_cast<T*>(krealloc(internalData, sizeof(T)*elementAmount));
 
             T* oldData = internalData;
             internalData = new T[elementAmount];
@@ -58,34 +70,12 @@ namespace toys {
             delete[] oldData;
 
             capacity = elementAmount;
-
-            if (!capacity) {
-                isEmpty = true;
-            }
         }
 
         void push_back(const T value) {
-            if (isEmpty) {
-                internalData = new T;
+            resize(capacity+1);
 
-                internalData[capacity++] = value;
-
-                isEmpty = false;
-                return;
-            }
-
-            // internalData = reinterpret_cast<T*>(krealloc(internalData, sizeof(T)*capacity+1));
-        
-            T* oldData = internalData;
-            internalData = new T[capacity+1];
-
-            for (size_t i = 0; i < capacity; i++) {
-                internalData[i] = oldData[i];
-            }
-
-            delete[] oldData;
-
-            internalData[capacity++] = value;
+            internalData[capacity-1] = value;
         }
 
         void pop_back() {
@@ -93,20 +83,7 @@ namespace toys {
                 return;
             }
 
-            // internalData = reinterpret_cast<T*>(krealloc(internalData, sizeof(T)*capacity-1));
-
-            T* oldData = internalData;
-            internalData = new T[capacity-1];
-
-            for (size_t i = 0; i < capacity-1; i++) {
-                internalData[i] = oldData[i];
-            }
-
-            delete[] oldData;
-
-            if (!(--capacity)) {
-                isEmpty = true;
-            }
+            resize(capacity-1);
         }
 
         T* data() {

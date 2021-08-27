@@ -6,6 +6,7 @@
 #include <boot/stivale2.hpp>
 #include <drivers/hpet.hpp>
 #include <memory/pmm.hpp>
+#include <lock.hpp>
 
 namespace Cpu {
 

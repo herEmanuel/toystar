@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-static uint8_t stack[4096];
+static uint8_t stack[16384];
 
 static struct stivale2_header_tag_smp smpTag {
     .tag = {

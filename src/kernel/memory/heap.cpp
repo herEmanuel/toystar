@@ -1,5 +1,6 @@
 #include "heap.hpp"
 #include "pmm.hpp"
+#include "vmm.hpp"
 #include <memory.hpp>
 #include <strings.hpp>
 #include <video.hpp>
@@ -25,9 +26,9 @@ namespace Heap {
     }
 
     BuddyAllocator::BuddyAllocator() {
-        bucketList = (Block**) (PMM::alloc(1) + PHYSICAL_BASE_ADDRESS);
+        bucketList = (Block**) (PMM::alloc(1) + VMM::PHYSICAL_BASE_ADDRESS);
 
-        Block* firstBlock = (Block*) (PMM::alloc(INITIAL_PAGES) + PHYSICAL_BASE_ADDRESS);
+        Block* firstBlock = (Block*) (PMM::alloc(INITIAL_PAGES) + VMM::PHYSICAL_BASE_ADDRESS);
 
         bucketList[0] = firstBlock;
         bucketList[0]->size = 1 << MAX_POWER;

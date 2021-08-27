@@ -1,8 +1,8 @@
-/* Tell the linker that we want the symbol _start to be our entry point */
+OUTPUT_FORMAT(elf64-x86-64)
+OUTPUT_ARCH(i386:x86-64)
+
 ENTRY(_start)
 
-/* Define the program headers we want so the bootloader gives us the right */
-/* MMU permissions */
 PHDRS
 {
     null    PT_NULL    FLAGS(0) ;                   /* Null segment */
@@ -14,19 +14,21 @@ PHDRS
 
 SECTIONS
 {
-    /* We wanna be placed in the higher half, 2MiB above 0 in physical memory. */
-    /* Since we are going to use PIE, this is just the base load address, but the */
-    /* bootloader will be able to relocate us as it sees fit. */
     . = 0xffffffff80200000;
 
-    /* We place the .stivale2hdr section containing the header in its own section, */
-    /* and we use the KEEP directive on it to make sure it doesn't get discarded. */
     .stivale2hdr ALIGN(4K) : {
         KEEP(*(.stivale2hdr))
     } :rodata
 
-    /* Then let's place all the other traditional executable sections afterwards. */
     .rodata ALIGN(4K) : {
+        start_ctors = .;
+        *(SORT(.ctors*))  /* Note the "SORT" */
+        end_ctors = .;
+
+        start_dtors = .;
+        *(SORT(.dtors*))
+        end_dtors = .;
+
         *(.rodata*)
     } :rodata
 
@@ -38,7 +40,6 @@ SECTIONS
         *(.data*)
     } :data
 
-    /* Dynamic section needed for PIE */
     .dynamic ALIGN(4K) : {
         *(.dynamic)
     } :data :dynamic

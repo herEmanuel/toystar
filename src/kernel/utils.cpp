@@ -1,5 +1,6 @@
 #include "utils.hpp"
 #include <video.hpp>
+#include <x86_64/cpu.hpp>
 
 namespace Toystar::utils {
 
@@ -10,8 +11,7 @@ namespace Toystar::utils {
         
         kprint("Kernel panic: %s\n", msg);
 
-        while(true)
-            asm("hlt");
+        Cpu::halt();
     }
 
 }
