@@ -51,11 +51,10 @@ namespace Cpu {
             asm("hlt");
     }
 
-    size_t cpus = 0;
+    size_t cpus = 1;
+    Lock::lock_t core = 0;
 
-    //TODO: finish it
     void bootstrap_cores(stivale2_struct_tag_smp* smpInfo) {
-        cpus++;
         for (size_t i = 0; i < smpInfo->cpu_count; i++) {
             void* stack = PMM::alloc(1);
 
@@ -65,21 +64,33 @@ namespace Cpu {
             cpu_data->tid = -1;
 
             smpInfo->smp_info[i].target_stack = reinterpret_cast<uint64_t>(stack);
-            smpInfo->smp_info[i].extra_argument = (uint64_t) cpu_data;
-            __atomic_store(&smpInfo->smp_info[i].goto_address, (uint64_t*)&core_init, __ATOMIC_RELAXED);
+            smpInfo->smp_info[i].extra_argument = reinterpret_cast<uint64_t>(cpu_data);
+
+            if (smpInfo->smp_info[i].lapic_id == smpInfo->bsp_lapic_id) {
+                set_gs((uint64_t)cpu_data);
+                continue;
+            }
+
+            __atomic_store_n(&smpInfo->smp_info[i].goto_address, &core_init, __ATOMIC_RELAXED);
         }
 
-        while(cpus != 4);
+        while(cpus != smpInfo->cpu_count);
         kprint("cpus: %d\n", cpus);
     }
 
-    void core_init() {
+    void core_init(stivale2_smp_info* smpInfo) {     
         load_gdt();
         load_idt();
 
         init_features();
 
+        set_gs(smpInfo->extra_argument);
+
         __atomic_fetch_add(&cpus, 1, __ATOMIC_RELAXED);
+
+        Lock::acquire(&core);
+        kprint("hello from core\n");
+        Lock::release(&core);
 
         halt();
     }

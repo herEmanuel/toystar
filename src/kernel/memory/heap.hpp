@@ -17,6 +17,7 @@ namespace Heap {
     struct Block {
         size_t size;
         Block* next;
+        uint16_t reserved;
     };
 
     class BuddyAllocator {

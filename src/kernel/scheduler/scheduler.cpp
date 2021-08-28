@@ -23,13 +23,12 @@ void idle_process_func() {
 }
 
 void scheduler_init() {
-    kprint("got here hey\n");
     VMM::vmm* proc_vmm = new VMM::vmm(true);
-    kprint("hey?\n");
+
     proc_vmm->mapRangeRaw(0, 0, 1048576, 0x7);
-    kprint("hmmm i knew it\n");
+
     process* idleProcess = create_process((uint64_t)&idle_process_func, 0x8, proc_vmm);
-    kprint("about to reschedule\n");
+    
     process_list.push_back(idleProcess);
     reschedule(idleProcess->threads[0]->regs);
 }
@@ -50,7 +49,7 @@ process* create_process(uint64_t rip, uint64_t cs, VMM::vmm* pagemap) {
     mainThread->status = Status::Waiting;
     mainThread->waiting_time = 0;
     mainThread->kernel_stack = reinterpret_cast<uint64_t>(PMM::alloc(1) + PAGE_SIZE + PHYSICAL_BASE_ADDRESS);
-    kprint("its probably here isnt it\n");
+
     pagemap->mapRange(USER_STACK_TOP, stack + USER_STACK_SIZE, 
                         USER_STACK_SIZE / PAGE_SIZE, 0x7, 0);
     
@@ -79,10 +78,8 @@ extern "C" void reschedule(context* regs) {
     size_t waiting_amount = 0;
     int proc_pid = -1;
     int thread_id = -1;
-    kprint("lock??\n");
+    
     Lock::acquire(&sched_lock);
-
-    kprint("proces list size: %d\n", process_list.size());
 
     for (size_t i = 0; i < process_list.size(); i++) {
         if (process_list[i]->status == Status::Running) 

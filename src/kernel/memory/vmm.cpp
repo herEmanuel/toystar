@@ -14,9 +14,7 @@ namespace VMM {
 
     //TODO: make my own pml4 
     void init() {
-        kernel_vmm = (vmm*) (PMM::alloc(1) + PHYSICAL_BASE_ADDRESS);
-
-        new (kernel_vmm) vmm();
+        kernel_vmm = new vmm();
 
         uint64_t pml4;
 

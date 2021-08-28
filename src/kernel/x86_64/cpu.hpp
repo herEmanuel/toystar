@@ -50,8 +50,8 @@ struct context {
 
 struct cpu {
     uint8_t lapic_id;
-    size_t tid;
-    size_t pid;
+    int tid;
+    int pid;
     uint64_t kernel_stack;
     uint64_t user_stack;
     VMM::vmm* pagemap;
@@ -92,6 +92,10 @@ namespace Cpu {
 
     inline cpu* local_core() {
         return reinterpret_cast<cpu*>(rdmsr(GSBase));
+    }
+
+    inline void set_gs(uint64_t gs) {
+        wrmsr(GSBase, gs);
     }
 }
 

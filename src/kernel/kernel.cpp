@@ -78,16 +78,16 @@ extern "C" void _start(stivale2_struct* stivale2) {
     kprint("VMM and PMM initialized\n");
 
     // PCI::enumerateDevices();
-    kprint("hm\n");
+
     Acpi::init(rsdp);
-    kprint("yeah bruh\n");
+
     Apic::init();
 
     kprint ("Apic initialized\n");
 
     Hpet::init();
 
-    // Cpu::bootstrap_cores(smpInfo);
+    Cpu::bootstrap_cores(smpInfo);
 
     // scheduler_init();
 

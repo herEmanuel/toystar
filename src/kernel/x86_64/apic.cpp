@@ -22,13 +22,7 @@ namespace Apic {
         toys::vector<madt_iso*> isos;
         toys::vector<madt_addrOverride*> addressOverride;
 
-        kprint("size: %d\n", lapics.size());
-        kprint("size: %d\n", ioapics.size());
-        kprint("size: %d\n", isos.size());
-        kprint("size: %d\n", addressOverride.size());
-
         for (size_t i = 0; i < entries; i += madtHeader->length) {
-            kprint("i: %d\n", i);
             madtHeader = reinterpret_cast<madt_header*>(&madtTable->madt_entries[i]);
 
             switch (madtHeader->type) {
@@ -99,7 +93,6 @@ namespace Apic {
         }
 
         asm("sti");
-        kprint("NOT AGAIN\n");
     }
 
     xapic::xapic(uint64_t baseAddress) {

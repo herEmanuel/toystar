@@ -175,7 +175,7 @@ namespace Heap {
         while ((1 << order) < size) {
             order++;
         }
-    
+
         size_t index = indexFromOrder(order);
 
         if (!bucketList[index]) {
