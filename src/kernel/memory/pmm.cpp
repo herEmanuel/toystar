@@ -31,7 +31,6 @@ namespace PMM {
         }
 
         bitmapSize = DIV_CEIL(lastUsablePage/PAGE_SIZE, 8);
-        kprint("bitmap size: %d\n", bitmapSize);
         
         for (size_t i = 0; i < entries; i++) {
             if(mmap[i].type != STIVALE2_MMAP_USABLE || mmap[i].length < bitmapSize) 
