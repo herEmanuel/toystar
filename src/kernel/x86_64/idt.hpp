@@ -10,6 +10,8 @@ struct interrupt_frame {
     uint64_t rip;
     uint64_t cs;
     uint64_t rflags;
+    uint64_t rsp;
+    uint64_t ss;
 };
 
 struct IDTDescriptor {
@@ -29,5 +31,6 @@ struct IDTGate {
 
 void registerInterruptHandler(size_t index, uint64_t addr, uint8_t gateType, uint8_t ist);
 void init_idt();
+void load_idt();
 
 #endif

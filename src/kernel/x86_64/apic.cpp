@@ -16,15 +16,11 @@ namespace Apic {
 
         size_t entries = madtTable->header.length - sizeof(sdt) - 8;
 
-        kprint("vectors?\n");
-
         //TODO: some stuff here doesn't seem to be necessary...
         toys::vector<madt_lapic*> lapics;
         toys::vector<madt_ioapic*> ioapics;
         toys::vector<madt_iso*> isos;
         toys::vector<madt_addrOverride*> addressOverride;
-
-        kprint("not vectors\n");
 
         for (size_t i = 0; i < entries; i += madtHeader->length) {
             madtHeader = reinterpret_cast<madt_header*>(&madtTable->madt_entries[i]);
@@ -59,8 +55,6 @@ namespace Apic {
             }
         }
 
-        kprint("ok acpi\n");
-
         for (size_t i = 0; i < ioapics.size(); i++) {
             ioapic ioApic(ioapics[i]);
             
@@ -90,11 +84,7 @@ namespace Apic {
             }
         }
 
-        kprint("redirected all of the ioapic shit\n");
-
         remapPIC(0x20, 0x28);
-
-        kprint("pic ok\n");
 
         if (addressOverride.size() != 0) {
             localApic = new xapic(addressOverride[0]->addr);
@@ -102,14 +92,11 @@ namespace Apic {
             localApic = new xapic(madtTable->lapic_addr);
         }
 
-        kprint("lapic ok\n");
-
         asm("sti");
-        kprint("fuck\n");
     }
 
     xapic::xapic(uint64_t baseAddress) {
-        base_address = baseAddress + VMM::PHYSICAL_BASE_ADDRESS;
+        base_address = baseAddress + PHYSICAL_BASE_ADDRESS;
         enable();
     }
 
@@ -142,7 +129,7 @@ namespace Apic {
 
     ioapic::ioapic(madt_ioapic* madtIoapic) {
         gsib = madtIoapic->gsib;
-        base_address = madtIoapic->ioapic_addr + VMM::PHYSICAL_BASE_ADDRESS;
+        base_address = madtIoapic->ioapic_addr + PHYSICAL_BASE_ADDRESS;
         ioapic_id = madtIoapic->ioapic_id;
     }
 

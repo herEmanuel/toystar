@@ -11,7 +11,7 @@ namespace Hpet {
 
     void init() {
         hpet_table* table = reinterpret_cast<hpet_table*>(Acpi::findTable("HPET"));
-        hpet = reinterpret_cast<hpetMem*>(table->address + VMM::PHYSICAL_BASE_ADDRESS);
+        hpet = reinterpret_cast<hpetMem*>(table->address + PHYSICAL_BASE_ADDRESS);
         clock = hpet->general_capabilities >> 32;
 
         hpet->general_configuration = 1; //main counter starts counting

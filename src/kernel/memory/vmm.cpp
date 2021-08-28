@@ -10,27 +10,38 @@
 
 namespace VMM {
 
-    VirtualMemoryManager* vmm = nullptr; 
-
-    void init() {
-        vmm = new VirtualMemoryManager();
-    }
+    vmm* kernel_vmm = nullptr; 
 
     //TODO: make my own pml4 
-    VirtualMemoryManager::VirtualMemoryManager() {
+    void init() {
+        kernel_vmm = (vmm*) (PMM::alloc(1) + PHYSICAL_BASE_ADDRESS);
+
+        new (kernel_vmm) vmm();
+
         uint64_t pml4;
 
         asm volatile (
             "mov %%cr3, %0"
             : "=r"(pml4)
         );
-
-        m_pagemap->pml4 = (uint64_t*) (pml4 + PHYSICAL_BASE_ADDRESS);
+     
+        kernel_vmm->setPml4((pml4 + PHYSICAL_BASE_ADDRESS));
 
         registerInterruptHandler(0xE, (uint64_t)&page_fault_handler, 0x8E, 0);
     }
 
-    uint64_t* VirtualMemoryManager::getNextLevel(uint64_t* currLevelPtr, uint16_t entry) {
+    vmm::vmm() {
+    }
+
+    vmm::vmm(bool bruh) {
+        if (bruh) {
+            m_pml4 = (uint64_t*) PMM::alloc(1);
+            kprint("size: %d\n", ranges.size());
+        }
+    }
+
+    uint64_t* vmm::getNextLevel(uint64_t* currLevelPtr, uint16_t entry) {
+        // kprint("yep next level\n");
         //not present
         if (!currLevelPtr[entry] & 1) {
             //TODO: use heap?
@@ -43,7 +54,7 @@ namespace VMM {
         return (uint64_t*)(currLevelPtr[entry] & 0xfffffffffffff000);
     }
 
-    void VirtualMemoryManager::mapPage(uint64_t virt, uint64_t phys, uint16_t flags) {
+    void vmm::mapPage(uint64_t virt, uint64_t phys, uint16_t flags) {
         uint16_t pml4e, pdpe, pde, pte;
 
         pml4e = ((virt >> 39) & 0x1FF);
@@ -51,32 +62,32 @@ namespace VMM {
         pde = ((virt >> 21) & 0x1FF);
         pte = ((virt >> 12) & 0x1FF);
 
-        uint64_t* pdp = getNextLevel(m_pagemap->pml4, pml4e);
+        uint64_t* pdp = getNextLevel(m_pml4, pml4e);
         uint64_t* pd = getNextLevel(pdp, pdpe);
         uint64_t* pt = getNextLevel(pd, pde);
 
         pt[pte] = phys | flags;
     }
 
-    void VirtualMemoryManager::mapRangeRaw(uint64_t virt, uint64_t phys, size_t length, size_t prot) {
+    void vmm::mapRangeRaw(uint64_t virt, uint64_t phys, size_t length, size_t prot) {
         //TODO: test
         for (size_t i = 0; i < length; i +=  PAGE_SIZE) {
             mapPage(virt+i, phys+i, prot);
         }
     }
 
-    void VirtualMemoryManager::unmapPage(uint64_t virt) {
+    void vmm::unmapPage(uint64_t virt) {
         mapPage(virt, 0, 0);
         invlpg(virt);
     }
 
-    void VirtualMemoryManager::unmapRangeRaw(uint64_t virt, size_t length) {
+    void vmm::unmapRangeRaw(uint64_t virt, size_t length) {
         for (size_t i = 0; i < length; i += PAGE_SIZE) {
             unmapPage(virt+i);
         }
     }
 
-    uint64_t VirtualMemoryManager::virtualToPhysical(uint64_t virt) {
+    uint64_t vmm::virtualToPhysical(uint64_t virt) {
         uint16_t pml4e, pdpe, pde, pte;
         
         pml4e = ((virt >> 39) & 0x1FF);
@@ -84,7 +95,7 @@ namespace VMM {
         pde = ((virt >> 21) & 0x1FF);
         pte = ((virt >> 12) & 0x1FF);
 
-        uint64_t* pdp = getNextLevel(m_pagemap->pml4, pml4e);
+        uint64_t* pdp = getNextLevel(m_pml4, pml4e);
         uint64_t* pd = getNextLevel(pdp, pdpe);
         uint64_t* pt = getNextLevel(pd, pde);
         
@@ -93,36 +104,32 @@ namespace VMM {
         return phys;
     }
 
-    void VirtualMemoryManager::mapRange(uint64_t virt, uint64_t phys, size_t length, size_t prot, size_t flags) {
+    void vmm::mapRange(uint64_t virt, uint64_t phys, size_t length, size_t prot, size_t flags) {
         MemArea* range = new MemArea;
-
+        kprint("NOT AGAIN\n");
         //TODO: anonymus flag and blablabla
 
         range->base = virt;
         range->limit = length;
         range->prot = prot;
         range->flags = flags;
-
-        m_pagemap->ranges.push_back(range);
-
+        kprint("ok1\n");
+        ranges.push_back(range);
+        kprint("ok2\n");
         mapRangeRaw(virt, phys, length, prot);
+        kprint("FUCK\n");
     }
 
-    Pagemap* VirtualMemoryManager::newPagemap() {
-        struct Pagemap* newPagemap;
-        //TODO: use heap?
-        newPagemap->pml4 = (uint64_t*)PMM::alloc(1);
-        return newPagemap;
-    }
-
-    void VirtualMemoryManager::switchPagemap(struct Pagemap* pagemap) {
-        m_pagemap = pagemap;
-
+    void vmm::switchPagemap() {
         asm volatile (
             "mov %0, %%cr3"
             :
-            : "r"(pagemap->pml4)
+            : "r"(m_pml4)
         );
+    }
+
+    void vmm::setPml4(uint64_t pml4) {
+        m_pml4 = (uint64_t*) pml4;
     }
 
 }

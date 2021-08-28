@@ -33,7 +33,8 @@ namespace toys {
 
         T& operator[](size_t i) {
             if (i >= capacity)  {
-                Toystar::utils::panic("vector out of bounds");
+                // Toystar::utils::panic("vector out of bounds");
+                kprint("noooooo\n");
             }
 
             return internalData[i];

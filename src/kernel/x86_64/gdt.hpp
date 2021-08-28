@@ -38,5 +38,6 @@ struct GDT {
 } __attribute__((packed));
 
 void init_gdt();
+void load_gdt();
 
 #endif

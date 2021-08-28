@@ -6,7 +6,10 @@
 #include <boot/stivale2.hpp>
 #include <drivers/hpet.hpp>
 #include <memory/pmm.hpp>
+#include <memory/heap.hpp>
 #include <lock.hpp>
+#include <x86_64/gdt.hpp>
+#include <x86_64/idt.hpp>
 
 namespace Cpu {
 
@@ -48,17 +51,36 @@ namespace Cpu {
             asm("hlt");
     }
 
+    size_t cpus = 0;
+
     //TODO: finish it
     void bootstrap_cores(stivale2_struct_tag_smp* smpInfo) {
+        cpus++;
         for (size_t i = 0; i < smpInfo->cpu_count; i++) {
             void* stack = PMM::alloc(1);
 
+            cpu* cpu_data = new cpu;
+            cpu_data->lapic_id = smpInfo->smp_info[i].lapic_id;
+            cpu_data->pid = -1;
+            cpu_data->tid = -1;
+
             smpInfo->smp_info[i].target_stack = reinterpret_cast<uint64_t>(stack);
-            smpInfo->smp_info[i].goto_address = reinterpret_cast<uint64_t>(&core_init);
+            smpInfo->smp_info[i].extra_argument = (uint64_t) cpu_data;
+            __atomic_store(&smpInfo->smp_info[i].goto_address, (uint64_t*)&core_init, __ATOMIC_RELAXED);
         }
+
+        while(cpus != 4);
+        kprint("cpus: %d\n", cpus);
     }
 
     void core_init() {
+        load_gdt();
+        load_idt();
+
+        init_features();
+
+        __atomic_fetch_add(&cpus, 1, __ATOMIC_RELAXED);
+
         halt();
     }
 

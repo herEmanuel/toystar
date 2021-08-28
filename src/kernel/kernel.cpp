@@ -11,6 +11,7 @@
 #include "pci.hpp"
 #include "drivers/keyboard.hpp"
 #include "drivers/hpet.hpp"
+#include "scheduler/scheduler.hpp"
 
 #include <stdint.h>
 #include <stddef.h>
@@ -49,16 +50,18 @@ extern "C" void _start(stivale2_struct* stivale2) {
     stivale2_struct_tag_smp* smpInfo;
     smpInfo = (stivale2_struct_tag_smp*)getTag(stivale2, STIVALE2_STRUCT_TAG_SMP_ID);
 
-    _init();
-
     videoInit(frameBufferInfo);
     
     kprint("Kernel loaded!\n");
 
+    kprint("Cores: %d\n", smpInfo->cpu_count);
+
     init_gdt();
+    load_gdt();
     kprint("GDT loaded\n");
 
     init_idt();
+    load_idt();
     kprint("IDT loaded\n");
 
     registerInterruptHandler(0x21, (uint64_t)&keyboard_handler, 0x8E, 0);
@@ -70,29 +73,23 @@ extern "C" void _start(stivale2_struct* stivale2) {
     //TODO: keep testing the vmm
     VMM::init();
 
+    _init();
+
     kprint("VMM and PMM initialized\n");
 
     // PCI::enumerateDevices();
-
-    kprint("Cores: %d\n", smpInfo->cpu_count);
-
-    kprint("acpi init addr: %x\n", (uint64_t)&Acpi::init);
-
+    kprint("hm\n");
     Acpi::init(rsdp);
-
-    kprint("got acpi\n");
-
-    kprint("apic init addr: %x\n", (uint64_t)&Apic::init);
-
+    kprint("yeah bruh\n");
     Apic::init();
 
-    kprint("got apic\n");
+    kprint ("Apic initialized\n");
 
     Hpet::init();
 
-    kprint("got here\n");
+    // Cpu::bootstrap_cores(smpInfo);
 
-    Cpu::bootstrap_cores(smpInfo);
+    // scheduler_init();
 
     Cpu::halt();
 }

@@ -4,6 +4,7 @@
 extern "C" void loadGdt(uint64_t);
 
 static GDT gdt;
+static GDTDescriptor gdtDescriptor;
 
 void init_gdt() {
     gdt.null = {0, 0, 0, 0, 0, 0};
@@ -12,7 +13,9 @@ void init_gdt() {
     gdt.userCode = {0, 0, 0, 0xFA, 0x20, 0};
     gdt.userData = {0, 0, 0, 0xF2, 0, 0};
 
-    GDTDescriptor gdtDescriptor = {sizeof(gdt) - 1, (uint64_t)&gdt};
+    gdtDescriptor = {sizeof(gdt) - 1, (uint64_t)&gdt};
+}
 
+void load_gdt() {
     loadGdt((uint64_t)&gdtDescriptor);
 }

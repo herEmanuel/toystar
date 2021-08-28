@@ -8,6 +8,9 @@
 #include <x86_64/cpu.hpp>
 #include <memory/vmm.hpp>
 
+#define USER_STACK_TOP 0x000000000100000
+#define USER_STACK_SIZE PAGE_SIZE * 8
+
 struct thread {
     size_t tid;
     size_t parent_pid;
@@ -26,7 +29,7 @@ struct process {
     size_t waiting_time;
 
     toys::vector<thread*> threads;
-    VMM::Pagemap* pagemap;
+    VMM::vmm* pagemap;
 };
 
 enum Status {
@@ -40,7 +43,6 @@ extern "C" {
 }
 
 void scheduler_init();
-process* create_process(uint64_t rip);
-
+process* create_process(uint64_t rip, uint64_t cs, VMM::vmm* pagemap);
 
 #endif

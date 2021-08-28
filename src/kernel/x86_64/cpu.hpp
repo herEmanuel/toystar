@@ -22,7 +22,7 @@ struct TSS {
     uint64_t ist6;
     uint64_t ist7;
     uint64_t reserved3;
-    uint32_t iobm; //TODO: still don't know exactly what this is
+    uint32_t iobm; 
 } __attribute__((packed));
 
 struct context {
@@ -54,7 +54,7 @@ struct cpu {
     size_t pid;
     uint64_t kernel_stack;
     uint64_t user_stack;
-    VMM::Pagemap* pagemap;
+    VMM::vmm* pagemap;
 };
 
 struct cpuid_return {

@@ -1,5 +1,4 @@
 global loadGdt
-global loadIdt
 
 loadGdt:
     lgdt [rdi]
@@ -14,6 +13,3 @@ loadGdt:
     push rdi ; return address
     retfq
 
-loadIdt:
-    lidt [rdi]
-    ret

@@ -7,13 +7,13 @@ OS = toystar.elf
 all: $(ISO_IMAGE)
 
 run: $(ISO_IMAGE)
-	qemu-system-x86_64.exe -smp 2 -M q35 -m 2G -cdrom $(ISO_IMAGE)
+	qemu-system-x86_64.exe -smp 4 -M q35 -m 2G -cdrom $(ISO_IMAGE)
 
 kvm:
 	qemu-system-x86_64.exe -smp 2 -M q35 -m 2G -cdrom $(ISO_IMAGE) -accel whpx
 
 test: 
-	qemu-system-x86_64.exe -smp 2 -d int -M smm=off -M q35 -m 2G -cdrom $(ISO_IMAGE)
+	qemu-system-x86_64.exe -smp 4 -d int -M smm=off -M q35 -m 2G -cdrom $(ISO_IMAGE)
 
 limine:
 	git clone https://github.com/limine-bootloader/limine.git --branch=v2.0-branch-binary --depth=1

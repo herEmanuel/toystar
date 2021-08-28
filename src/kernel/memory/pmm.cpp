@@ -30,20 +30,21 @@ namespace PMM {
                 lastUsablePage = top;
         }
 
-        bitmapSize = DIV_CEIL(lastUsablePage/VMM::PAGE_SIZE, 8);
+        bitmapSize = DIV_CEIL(lastUsablePage/PAGE_SIZE, 8);
+        kprint("bitmap size: %d\n", bitmapSize);
         
         for (size_t i = 0; i < entries; i++) {
             if(mmap[i].type != STIVALE2_MMAP_USABLE || mmap[i].length < bitmapSize) 
                 continue; 
             
-            bitmap = (uint8_t*)mmap[i].base + VMM::PHYSICAL_BASE_ADDRESS;
-            size_t bitmapPages = DIV_CEIL(bitmapSize, VMM::PAGE_SIZE);
+            bitmap = (uint8_t*)mmap[i].base + PHYSICAL_BASE_ADDRESS;
+            size_t bitmapPages = DIV_CEIL(bitmapSize, PAGE_SIZE);
 
             //mark everything as not usable
             memset(bitmap, 0xFF, bitmapSize);
             
-            mmap[i].base += bitmapPages * VMM::PAGE_SIZE;
-            mmap[i].length -= bitmapPages * VMM::PAGE_SIZE;
+            mmap[i].base += bitmapPages * PAGE_SIZE;
+            mmap[i].length -= bitmapPages * PAGE_SIZE;
             break;
         }
     
@@ -51,13 +52,13 @@ namespace PMM {
             if (mmap[i].type != STIVALE2_MMAP_USABLE)
                 continue;
 
-            size_t pageNumber = mmap[i].base / VMM::PAGE_SIZE;
+            size_t pageNumber = mmap[i].base / PAGE_SIZE;
 
             /*  this sets the bit corresponding to the frame number as 0 
                 (marking the frame as free)
             */
         
-            size_t length = mmap[i].length / VMM::PAGE_SIZE;
+            size_t length = mmap[i].length / PAGE_SIZE;
 
             //TODO: this can be optimized (a lot)
             for (size_t i = pageNumber; i <= pageNumber + length; i++) {
@@ -89,8 +90,8 @@ namespace PMM {
                         }
                     }
 
-                    uint64_t addr = page * VMM::PAGE_SIZE;
-                    memset((void*)addr + VMM::PHYSICAL_BASE_ADDRESS, 0, count * VMM::PAGE_SIZE);
+                    uint64_t addr = page * PAGE_SIZE;
+                    memset((void*)addr + PHYSICAL_BASE_ADDRESS, 0, count * PAGE_SIZE);
 
                     return (void*)addr;
                 } 
@@ -103,7 +104,7 @@ namespace PMM {
     }
 
     void free(void* ptr, size_t count) {
-        size_t page = (size_t)ptr/VMM::PAGE_SIZE;
+        size_t page = (size_t)ptr/PAGE_SIZE;
 
         for (size_t i = page; i < page + count; i++) {
             //flawed
