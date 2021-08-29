@@ -7,6 +7,7 @@
 #include <vector.hpp>
 
 #define PHYSICAL_BASE_ADDRESS 0xffff800000000000
+#define KERNEL_BASE 0xffffffff80000000
 #define PAGE_SIZE 4096
 
 namespace VMM {

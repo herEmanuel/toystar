@@ -8,7 +8,7 @@
 #include <x86_64/cpu.hpp>
 #include <memory/vmm.hpp>
 
-#define USER_STACK_TOP 0x000000000100000
+#define USER_STACK 0x000000000100000
 #define USER_STACK_SIZE PAGE_SIZE * 8
 
 struct thread {

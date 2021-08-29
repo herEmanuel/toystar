@@ -34,10 +34,12 @@ struct GDT {
     GDTEntry kernelData;
     GDTEntry userCode;
     GDTEntry userData;
-    //TODO: add tss
+    TSSEntry tss;
 } __attribute__((packed));
 
 void init_gdt();
 void load_gdt();
+
+void load_tss(uint64_t tssAddr);
 
 #endif

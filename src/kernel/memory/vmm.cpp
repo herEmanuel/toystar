@@ -33,7 +33,7 @@ namespace VMM {
 
     vmm::vmm(bool bruh) {
         if (bruh) {
-            m_pml4 = (uint64_t*) PMM::alloc(1);
+            m_pml4 = (uint64_t*) (PMM::alloc(1) + PHYSICAL_BASE_ADDRESS);
             kprint("size: %d\n", ranges.size());
         }
     }
@@ -69,7 +69,7 @@ namespace VMM {
 
     void vmm::mapRangeRaw(uint64_t virt, uint64_t phys, size_t length, size_t prot) {
         //TODO: test
-        for (size_t i = 0; i < length; i +=  PAGE_SIZE) {
+        for (size_t i = 0; i < length; i += PAGE_SIZE) {
             mapPage(virt+i, phys+i, prot);
         }
     }
@@ -104,25 +104,25 @@ namespace VMM {
 
     void vmm::mapRange(uint64_t virt, uint64_t phys, size_t length, size_t prot, size_t flags) {
         MemArea* range = new MemArea;
-        kprint("NOT AGAIN\n");
         //TODO: anonymus flag and blablabla
 
         range->base = virt;
         range->limit = length;
         range->prot = prot;
         range->flags = flags;
-        kprint("ok1\n");
         ranges.push_back(range);
-        kprint("ok2\n");
         mapRangeRaw(virt, phys, length, prot);
-        kprint("FUCK\n");
     }
 
     void vmm::switchPagemap() {
+        // kprint("pml4: %x\n", (uint64_t)m_pml4);
+        uint64_t pml4 = (uint64_t)((void*)m_pml4 - PHYSICAL_BASE_ADDRESS);
+        // kprint("pml4: %x\n", pml4);
         asm volatile (
             "mov %0, %%cr3"
             :
-            : "r"(m_pml4)
+            : "r"(pml4)
+            : "memory"
         );
     }
 

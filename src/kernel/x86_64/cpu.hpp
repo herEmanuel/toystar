@@ -70,14 +70,14 @@ namespace Cpu {
     void halt();
     void init_features();
     void bootstrap_cores(stivale2_struct_tag_smp* smpInfo);
-    void core_init();
+    void core_init(stivale2_smp_info* smpInfo);
     
     inline uint64_t rdmsr(uint32_t msr) {
         uint32_t edx, eax;
 
         asm volatile("rdmsr" : "=d"(edx), "=a"(eax) : "c"(msr));
 
-        return eax | (edx << 32);
+        return ((uint64_t)edx << 32) | eax;
     }
 
     inline void wrmsr(uint32_t msr, uint64_t value) {

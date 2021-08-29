@@ -89,7 +89,7 @@ extern "C" void _start(stivale2_struct* stivale2) {
 
     Cpu::bootstrap_cores(smpInfo);
 
-    // scheduler_init();
+    scheduler_init();
 
     Cpu::halt();
 }

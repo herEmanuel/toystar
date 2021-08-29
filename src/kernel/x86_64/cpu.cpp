@@ -56,7 +56,7 @@ namespace Cpu {
 
     void bootstrap_cores(stivale2_struct_tag_smp* smpInfo) {
         for (size_t i = 0; i < smpInfo->cpu_count; i++) {
-            void* stack = PMM::alloc(1);
+            void* stack = PMM::alloc(4);
 
             cpu* cpu_data = new cpu;
             cpu_data->lapic_id = smpInfo->smp_info[i].lapic_id;
@@ -67,6 +67,11 @@ namespace Cpu {
             smpInfo->smp_info[i].extra_argument = reinterpret_cast<uint64_t>(cpu_data);
 
             if (smpInfo->smp_info[i].lapic_id == smpInfo->bsp_lapic_id) {
+                TSS* tss = new TSS;
+                tss->rsp0 = (uint64_t) PMM::alloc(4);
+
+                load_tss((uint64_t)tss);
+
                 set_gs((uint64_t)cpu_data);
                 continue;
             }
@@ -87,10 +92,6 @@ namespace Cpu {
         set_gs(smpInfo->extra_argument);
 
         __atomic_fetch_add(&cpus, 1, __ATOMIC_RELAXED);
-
-        Lock::acquire(&core);
-        kprint("hello from core\n");
-        Lock::release(&core);
 
         halt();
     }

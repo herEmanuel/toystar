@@ -8,6 +8,7 @@
 #include <memory/vmm.hpp>
 #include <memory/pmm.hpp>
 #include <memory/heap.hpp>
+#include <memory.hpp>
 
 Lock::lock_t sched_lock = 0;
 
@@ -25,10 +26,18 @@ void idle_process_func() {
 void scheduler_init() {
     VMM::vmm* proc_vmm = new VMM::vmm(true);
 
-    proc_vmm->mapRangeRaw(0, 0, 1048576, 0x7);
+    //this is too slow
+    proc_vmm->mapRangeRaw(0, 0, 0x100000000, 0b111);
+
+    for (size_t i = 0; i < 0x100000000; i += PAGE_SIZE) {
+        proc_vmm->mapPage(PHYSICAL_BASE_ADDRESS + i, i, 0b11);
+    }
+
+    for (size_t i = 0; i < 0x80000000; i += PAGE_SIZE) {
+        proc_vmm->mapPage(KERNEL_BASE + i, i, 0b11);
+    }
 
     process* idleProcess = create_process((uint64_t)&idle_process_func, 0x8, proc_vmm);
-    
     process_list.push_back(idleProcess);
     reschedule(idleProcess->threads[0]->regs);
 }
@@ -48,12 +57,12 @@ process* create_process(uint64_t rip, uint64_t cs, VMM::vmm* pagemap) {
     mainThread->tid = 0; //note: nonono
     mainThread->status = Status::Waiting;
     mainThread->waiting_time = 0;
+    memset(mainThread->regs, 0, sizeof(context));
     mainThread->kernel_stack = reinterpret_cast<uint64_t>(PMM::alloc(1) + PAGE_SIZE + PHYSICAL_BASE_ADDRESS);
 
-    pagemap->mapRange(USER_STACK_TOP, stack + USER_STACK_SIZE, 
-                        USER_STACK_SIZE / PAGE_SIZE, 0x7, 0);
+    pagemap->mapRange(USER_STACK, stack, USER_STACK_SIZE, 0b111, 0);
     
-    mainThread->user_stack = USER_STACK_TOP;
+    mainThread->user_stack = USER_STACK + USER_STACK_SIZE;
     mainThread->regs->rip = rip;
     mainThread->regs->rsp = mainThread->user_stack;
     mainThread->regs->rflags = 0x202;
@@ -63,7 +72,7 @@ process* create_process(uint64_t rip, uint64_t cs, VMM::vmm* pagemap) {
     if (cs == 0x8) {
         mainThread->regs->ss = 0x10;
     } else {
-        mainThread->regs->ss = 0x20;
+        mainThread->regs->ss = 0x20 | 0x3;
     }
 
     newProcess->threads.push_back(mainThread);
@@ -121,18 +130,18 @@ extern "C" void reschedule(context* regs) {
     proc->status = Status::Running;
     scheduled_thread->status = Status::Running;
 
-    //TODO: save current state
-    //TODO: theres nothing at gs now bruh
     cpu* current_core = Cpu::local_core();
 
-    process* previous_proc = process_list[current_core->pid];
+    if (current_core->pid != -1 && current_core->tid != -1) {
+        process* previous_proc = process_list[current_core->pid];
 
-    previous_proc->status = Status::Waiting;
-    previous_proc->threads[current_core->tid]->status = Status::Waiting;
-    previous_proc->threads[current_core->tid]->regs = regs;
+        previous_proc->status = Status::Waiting;
+        previous_proc->threads[current_core->tid]->status = Status::Waiting;
+        previous_proc->threads[current_core->tid]->regs = regs;
+    }
 
     Lock::release(&sched_lock);
-
+ 
     current_core->tid = scheduled_thread->tid;
     current_core->pid = proc->pid;
     current_core->kernel_stack = scheduled_thread->kernel_stack;
