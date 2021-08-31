@@ -4,6 +4,7 @@
 #include <acpi/acpi.hpp>
 #include <memory/vmm.hpp>
 #include <memory/heap.hpp>
+#include <drivers/hpet.hpp>
 #include <vector.hpp>
 
 namespace Apic {
@@ -98,6 +99,7 @@ namespace Apic {
     xapic::xapic(uint64_t baseAddress) {
         base_address = baseAddress + PHYSICAL_BASE_ADDRESS;
         enable();
+        calibrate_timer(1000);
     }
 
     uint32_t xapic::read(uint16_t reg) {
@@ -113,12 +115,19 @@ namespace Apic {
         write(LapicRegisters::SIVR, read(LapicRegisters::SIVR) | 0x1FF);
     }
 
-    //TODO: implement it
-    void xapic::calibrate_timer() {
+    void xapic::calibrate_timer(uint64_t ms) {
+        write(LapicRegisters::DCR, 0x3);
+        write(LapicRegisters::InitialCountR, 0xFFFFFFFF);
 
+        Hpet::sleep(ms);
+
+        uint64_t count = 0xFFFFFFFF - read(LapicRegisters::CurrentCountR);
+
+        write(LapicRegisters::LVTTimer, 0x20 | 0x20000);
+        write(LapicRegisters::DCR, 0x3);
+        write(LapicRegisters::InitialCountR, count);
     }
 
-    //TODO: implement it
     void xapic::send_ipi(uint8_t apic, uint64_t ipi) {
 
     }
@@ -147,10 +156,8 @@ namespace Apic {
         uint32_t reg = ((gsi - gsib) * 2) + 0x10;
         uint64_t redirection = vector;
 
-        //set bit 13 (active low) if the flag specifies that it is active low
         redirection |= (flags & 2) ? (1 << 13) : redirection;
 
-        //set bit 15 (level triggered) if the flag specifies that it is level triggered
         redirection |= (flags & 8) ? (1 << 15) : redirection;
 
         write(reg, redirection);

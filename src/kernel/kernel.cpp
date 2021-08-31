@@ -81,11 +81,11 @@ extern "C" void _start(stivale2_struct* stivale2) {
 
     Acpi::init(rsdp);
 
+    Hpet::init();
+
     Apic::init();
 
     kprint ("Apic initialized\n");
-
-    Hpet::init();
 
     Cpu::bootstrap_cores(smpInfo);
 

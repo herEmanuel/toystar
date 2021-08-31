@@ -1,10 +1,10 @@
 #include "pmm.hpp"
 #include "vmm.hpp"
 #include <boot/stivale2.hpp>
-#include <video.hpp>
 #include <memory.hpp>
 #include <math.hpp>
 #include <strings.hpp>
+#include <bitmap.hpp>
 
 #include <stdint.h>
 #include <stddef.h>
@@ -12,8 +12,6 @@
 static uint8_t* bitmap; //1 = used, 0 = free
 static size_t bitmapSize = 0;
 static size_t lastUsablePage = 0;
-
-bool isBitUnset(size_t bit);
 
 namespace PMM {
     
@@ -59,14 +57,8 @@ namespace PMM {
         
             size_t length = mmap[i].length / PAGE_SIZE;
 
-            //TODO: this can be optimized (a lot)
             for (size_t i = pageNumber; i <= pageNumber + length; i++) {
-                //flawed
-                if ((i%8) != 0) {
-                    bitmap[i/8] ^= (1 << (8 - i%8));
-                } else {
-                    bitmap[i/8 - 1] ^= 1;
-                }
+                toys::clearBit(bitmap, i);
             }
         }
     }
@@ -75,18 +67,14 @@ namespace PMM {
         size_t currentCount = 0;
 
         for (size_t i = 0; i < bitmapSize*8; i++) {
-            if (isBitUnset(i)) {
+            if (!toys::isBitSet(bitmap, i)) {
                 currentCount++;
 
                 if (currentCount == count) {
                     size_t page = i - count + 1;
                     
                     for (size_t c = page; c < page + count; c++) {
-                        if ((c%8) != 0) {
-                            bitmap[c/8] |= (1 << (8 - c%8));
-                        } else {
-                            bitmap[c/8 - 1] |= 1;
-                        }
+                        toys::setBit(bitmap, c);
                     }
 
                     uint64_t addr = page * PAGE_SIZE;
@@ -106,27 +94,7 @@ namespace PMM {
         size_t page = (size_t)ptr/PAGE_SIZE;
 
         for (size_t i = page; i < page + count; i++) {
-            //flawed
-            if ((i%8) != 0) {
-                bitmap[i/8] ^= (1 << (8 - i%8));
-            } else {
-                bitmap[i/8 - 1] ^= 1;
-            }
+            toys::clearBit(bitmap, i);
         }
     }
-}
-
-bool isBitUnset(size_t bit) {
-    size_t i = bit/8;
-
-    if (!bit) {
-        if (!(bitmap[0] & 0b10000000)) { return true; }
-    }
-    else if (bit%8 == 0) {
-        if (!(bitmap[i-1] & 1)) { return true; }
-    } else {
-        if (!(bitmap[i] & (1 << (8 - (bit%8))))) { return true; }
-    }
-
-    return false;
 }

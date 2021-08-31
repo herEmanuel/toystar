@@ -13,7 +13,11 @@ namespace Apic {
         EOI = 0xB0,
         ICR = 0x300,
         SIVR = 0xF0,
-        TPR = 0x80
+        TPR = 0x80,
+        DCR = 0x3E0,
+        LVTTimer = 0x320,
+        InitialCountR = 0x380,
+        CurrentCountR = 0X390
     };
 
     class xapic {
@@ -27,7 +31,7 @@ namespace Apic {
         void write(uint16_t reg, uint32_t value);
         uint32_t read(uint16_t reg);
 
-        void calibrate_timer();
+        void calibrate_timer(uint64_t ms);
         void enable();
         void send_ipi(uint8_t apic, uint64_t ipi);
         void eoi();

@@ -82,6 +82,7 @@ process* create_process(uint64_t rip, uint64_t cs, VMM::vmm* pagemap) {
 
 //TODO: how can 2 threads of the same process be running at the same time?
 
+//TODO: yeah keep going
 extern "C" void reschedule(context* regs) {
 
     size_t waiting_amount = 0;
@@ -89,6 +90,8 @@ extern "C" void reschedule(context* regs) {
     int thread_id = -1;
     
     Lock::acquire(&sched_lock);
+
+    cpu* current_core = Cpu::local_core();
 
     for (size_t i = 0; i < process_list.size(); i++) {
         if (process_list[i]->status == Status::Running) 
@@ -104,8 +107,12 @@ extern "C" void reschedule(context* regs) {
     }
 
     if (proc_pid == -1) {
-        kprint("yeah theres nothing there\n");
-        Cpu::halt();
+        if (current_core->pid != -1) {
+            proc_pid = current_core->pid;
+        } else {
+            Lock::release(&sched_lock);
+            Cpu::halt();
+        }
     }
 
     process* proc = process_list[proc_pid];
@@ -129,8 +136,6 @@ extern "C" void reschedule(context* regs) {
 
     proc->status = Status::Running;
     scheduled_thread->status = Status::Running;
-
-    cpu* current_core = Cpu::local_core();
 
     if (current_core->pid != -1 && current_core->tid != -1) {
         process* previous_proc = process_list[current_core->pid];
