@@ -69,8 +69,7 @@ extern "C" void _start(stivale2_struct* stivale2) {
     PMM::init(memmapInfo->memmap, memmapInfo->entries);
 
     Heap::init();
-
-    //TODO: keep testing the vmm
+    
     VMM::init();
 
     _init();
@@ -85,11 +84,9 @@ extern "C" void _start(stivale2_struct* stivale2) {
 
     Apic::init();
 
-    kprint ("Apic initialized\n");
-
     Cpu::bootstrap_cores(smpInfo);
 
-    scheduler_init();
+    Sched::init();
 
     Cpu::halt();
 }

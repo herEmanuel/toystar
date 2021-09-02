@@ -99,7 +99,6 @@ namespace Apic {
     xapic::xapic(uint64_t baseAddress) {
         base_address = baseAddress + PHYSICAL_BASE_ADDRESS;
         enable();
-        calibrate_timer(1000);
     }
 
     uint32_t xapic::read(uint16_t reg) {

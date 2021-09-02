@@ -7,6 +7,7 @@
 #include <memory/vmm.hpp>
 
 #define GSBase 0xC0000101
+#define KernelGSBase 0xC0000102
 
 struct TSS {
     uint32_t reserved0;
@@ -96,6 +97,11 @@ namespace Cpu {
 
     inline void set_gs(uint64_t gs) {
         wrmsr(GSBase, gs);
+        wrmsr(KernelGSBase, 0); //user gs will always be 0
+    }
+
+    inline void swapgs() {
+        asm volatile("swapgs");
     }
 }
 

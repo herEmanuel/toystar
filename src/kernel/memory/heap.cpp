@@ -5,6 +5,7 @@
 #include <strings.hpp>
 #include <video.hpp>
 #include <utils.hpp>
+#include <lock.hpp>
 
 #include <stdint.h>
 #include <stddef.h>
@@ -12,6 +13,7 @@
 //TODO: do more testing
 
 Heap::BuddyAllocator* allocator = nullptr;
+Lock::lock_t heap_lock = 0;
 
 namespace Heap {
 
@@ -178,6 +180,8 @@ namespace Heap {
 
         size_t index = indexFromOrder(order);
 
+        Lock::acquire(&heap_lock);
+
         if (!bucketList[index]) {
             size_t t = order + 1;
 
@@ -196,6 +200,8 @@ namespace Heap {
 
         allocated->next = nullptr;
 
+        Lock::release(&heap_lock);
+
         return (void*)allocated + sizeof(Block);
     }
 
@@ -212,10 +218,14 @@ namespace Heap {
 
         size_t index = indexFromOrder(order);
     
+        Lock::acquire(&heap_lock);
+
         block->next = bucketList[index];
         bucketList[index] = block;
 
         while (order < MAX_POWER && tryToMerge(order++));
+
+        Lock::release(&heap_lock);
     }
 
     void* BuddyAllocator::krealloc(void* ptr, size_t bytes) {

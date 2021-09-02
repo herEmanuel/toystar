@@ -11,38 +11,42 @@
 #define USER_STACK 0x000000000100000
 #define USER_STACK_SIZE PAGE_SIZE * 8
 
-struct thread {
-    size_t tid;
-    size_t parent_pid;
-    size_t status;
-    size_t waiting_time;
+namespace Sched {
+    
+    struct thread {
+        size_t tid;
+        size_t parent_pid;
+        size_t status;
+        size_t waiting_time;
 
-    uint64_t kernel_stack;
-    uint64_t user_stack;
+        uint64_t kernel_stack;
+        uint64_t user_stack;
 
-    context* regs;
-};
+        context* regs;
+    };
 
-struct process {
-    size_t pid;
-    size_t status;
-    size_t waiting_time;
+    struct process {
+        size_t pid;
+        size_t status;
 
-    toys::vector<thread*> threads;
-    VMM::vmm* pagemap;
-};
+        toys::vector<thread*> threads;
+        VMM::vmm* pagemap;
+    };
 
-enum Status {
-    Waiting, 
-    Running
-};
+    enum Status {
+        Waiting, 
+        Running
+    };
 
-extern "C" {
-    void context_switch(context* regs);
-    void reschedule(context* regs);
+    extern "C" {
+        void context_switch(context* regs);
+        void reschedule(context* regs);
+    }
+
+    void init();
+    void queue(thread* thread_to_queue);
+    process* create_process(uint64_t rip, uint64_t cs, VMM::vmm* pagemap);
+
 }
-
-void scheduler_init();
-process* create_process(uint64_t rip, uint64_t cs, VMM::vmm* pagemap);
 
 #endif

@@ -10,6 +10,7 @@
 #include <lock.hpp>
 #include <x86_64/gdt.hpp>
 #include <x86_64/idt.hpp>
+#include <x86_64/apic.hpp>
 
 namespace Cpu {
 
@@ -90,6 +91,8 @@ namespace Cpu {
         init_features();
 
         set_gs(smpInfo->extra_argument);
+
+        Apic::localApic->enable();
 
         __atomic_fetch_add(&cpus, 1, __ATOMIC_RELAXED);
 

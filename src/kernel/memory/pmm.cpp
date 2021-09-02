@@ -5,6 +5,7 @@
 #include <math.hpp>
 #include <strings.hpp>
 #include <bitmap.hpp>
+#include <lock.hpp>
 
 #include <stdint.h>
 #include <stddef.h>
@@ -12,6 +13,8 @@
 static uint8_t* bitmap; //1 = used, 0 = free
 static size_t bitmapSize = 0;
 static size_t lastUsablePage = 0;
+
+Lock::lock_t pmm_lock = 0;
 
 namespace PMM {
     
@@ -31,7 +34,10 @@ namespace PMM {
         bitmapSize = DIV_CEIL(lastUsablePage/PAGE_SIZE, 8);
         
         for (size_t i = 0; i < entries; i++) {
-            if(mmap[i].type != STIVALE2_MMAP_USABLE || mmap[i].length < bitmapSize) 
+
+            if(mmap[i].type != STIVALE2_MMAP_USABLE 
+                && mmap[i].type != STIVALE2_MMAP_BOOTLOADER_RECLAIMABLE
+                || mmap[i].length < bitmapSize) 
                 continue; 
             
             bitmap = (uint8_t*)mmap[i].base + PHYSICAL_BASE_ADDRESS;
@@ -46,7 +52,8 @@ namespace PMM {
         }
     
         for (size_t i = 0; i < entries; i++) {
-            if (mmap[i].type != STIVALE2_MMAP_USABLE)
+            if (mmap[i].type != STIVALE2_MMAP_USABLE 
+                && mmap[i].type != STIVALE2_MMAP_BOOTLOADER_RECLAIMABLE)
                 continue;
 
             size_t pageNumber = mmap[i].base / PAGE_SIZE;
@@ -66,6 +73,8 @@ namespace PMM {
     void* alloc(size_t count) {
         size_t currentCount = 0;
 
+        Lock::acquire(&pmm_lock);
+
         for (size_t i = 0; i < bitmapSize*8; i++) {
             if (!toys::isBitSet(bitmap, i)) {
                 currentCount++;
@@ -80,12 +89,16 @@ namespace PMM {
                     uint64_t addr = page * PAGE_SIZE;
                     memset((void*)addr + PHYSICAL_BASE_ADDRESS, 0, count * PAGE_SIZE);
 
+                    Lock::release(&pmm_lock);
+
                     return (void*)addr;
                 } 
             } else {
                 currentCount = 0;
             }
         }
+
+        Lock::release(&pmm_lock);
     
         return nullptr;
     }
@@ -93,8 +106,12 @@ namespace PMM {
     void free(void* ptr, size_t count) {
         size_t page = (size_t)ptr/PAGE_SIZE;
 
+        Lock::acquire(&pmm_lock);
+
         for (size_t i = page; i < page + count; i++) {
             toys::clearBit(bitmap, i);
         }
+
+        Lock::release(&pmm_lock);
     }
 }

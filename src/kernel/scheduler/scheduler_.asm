@@ -25,7 +25,13 @@ global reschedule_handler
 
 extern reschedule
 
+ ;  this will only return if there was no running processe before 
+ ;  and if there is no process waiting for cpu time
+
+
 reschedule_handler:
+    cld
+
     push r15
     push r14
     push r13
@@ -46,5 +52,21 @@ reschedule_handler:
 
     call reschedule
 
-    ; should return in context_switch
+    pop rax
+    pop rbx
+    pop rcx
+    pop rdx
+    pop rsi
+    pop rdi
+    pop rbp
+    pop r8
+    pop r9
+    pop r10
+    pop r11
+    pop r12
+    pop r13
+    pop r14
+    pop r15
+
+    iretq 
     

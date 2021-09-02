@@ -10,7 +10,8 @@ __INTERRUPT__ void division_by_zero_handler(interrupt_frame* intFrame);
 __INTERRUPT__ void breakpoint_handler(interrupt_frame* intFrame);
 __INTERRUPT__ void double_fault_handler(interrupt_frame* intFrame);
 __INTERRUPT__ void general_protection_handler(interrupt_frame* intFrame, uint64_t errCode);
-__INTERRUPT__ void timer(interrupt_frame* intFrame);
+
+extern "C" void reschedule_handler();
 
 static IDTGate idt[256];
 static IDTDescriptor idtDescriptor;
@@ -32,7 +33,7 @@ void init_idt() {
     registerInterruptHandler(0x3, (uint64_t)&breakpoint_handler, 0x8E, 0);
     registerInterruptHandler(0x8, (uint64_t)&double_fault_handler, 0x8E, 0);
     registerInterruptHandler(0xD, (uint64_t)&general_protection_handler, 0x8E, 0);
-    registerInterruptHandler(0x20, (uint64_t)&timer, 0x8E, 0);
+    registerInterruptHandler(0x20, (uint64_t)&reschedule_handler, 0x8E, 0);
 
     idtDescriptor = {sizeof(idt), (uint64_t)&idt};
 }
@@ -42,11 +43,6 @@ void load_idt() {
 }
 
 // INTERRUPT HANDLERS
-
-__INTERRUPT__ void timer(interrupt_frame* intFrame) {
-    kprint("timer!\n");
-    Apic::localApic->eoi();
-}
 
 __INTERRUPT__ void division_by_zero_handler(interrupt_frame* intFrame) {
     kprint("Division by zero!");

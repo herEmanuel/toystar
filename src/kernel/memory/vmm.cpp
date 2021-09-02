@@ -12,7 +12,6 @@ namespace VMM {
 
     vmm* kernel_vmm = nullptr; 
 
-    //TODO: make my own pml4 
     void init() {
         kernel_vmm = new vmm();
 
@@ -39,10 +38,7 @@ namespace VMM {
     }
 
     uint64_t* vmm::getNextLevel(uint64_t* currLevelPtr, uint16_t entry) {
-        // kprint("yep next level\n");
-        //not present
         if (!currLevelPtr[entry] & 1) {
-            //TODO: use heap?
             uint64_t allocated = (uint64_t)PMM::alloc(1);
             currLevelPtr[entry] = allocated | 0b111;
 
@@ -68,7 +64,6 @@ namespace VMM {
     }
 
     void vmm::mapRangeRaw(uint64_t virt, uint64_t phys, size_t length, size_t prot) {
-        //TODO: test
         for (size_t i = 0; i < length; i += PAGE_SIZE) {
             mapPage(virt+i, phys+i, prot);
         }
@@ -115,14 +110,12 @@ namespace VMM {
     }
 
     void vmm::switchPagemap() {
-        // kprint("pml4: %x\n", (uint64_t)m_pml4);
         uint64_t pml4 = (uint64_t)((void*)m_pml4 - PHYSICAL_BASE_ADDRESS);
-        // kprint("pml4: %x\n", pml4);
+
         asm volatile (
             "mov %0, %%cr3"
             :
             : "r"(pml4)
-            : "memory"
         );
     }
 
