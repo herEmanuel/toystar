@@ -78,3 +78,11 @@ bool strcmp(const char* msg1, const char* msg2, size_t len) {
 
     return true;
 }
+
+size_t strlen(const char* str) {
+    size_t i = 0;
+
+    while (str[i++]);
+
+    return i - 1;
+}

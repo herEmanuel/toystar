@@ -18,6 +18,7 @@
 #include <strings.hpp>
 #include <memory.hpp>
 #include <vector.hpp>
+#include <map.hpp>
 
 void* getTag(stivale2_struct* firstTag, uint64_t tagId) {
     stivale2_tag *currentTag = (stivale2_tag*)firstTag->tags;
