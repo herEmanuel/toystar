@@ -66,12 +66,23 @@ struct cpuid_return {
 };
 
 namespace Cpu {
-    
-    cpuid_return cpuid(uint32_t eax, uint32_t ecx);
+
     void halt();
     void init_features();
     void bootstrap_cores(stivale2_struct_tag_smp* smpInfo);
     void core_init(stivale2_smp_info* smpInfo);
+    
+    inline cpuid_return cpuid(uint32_t eax, uint32_t ecx) {
+        cpuid_return ret = {0, 0, 0, 0};
+
+        asm volatile(
+            "cpuid" 
+            : "=a"(ret.rax), "=b"(ret.rbx), "=c"(ret.rcx), "=d"(ret.rdx) 
+            : "a"(eax), "c"(ecx)
+        );
+
+        return ret;
+    }
     
     inline uint64_t rdmsr(uint32_t msr) {
         uint32_t edx, eax;

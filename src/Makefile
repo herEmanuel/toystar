@@ -14,7 +14,7 @@ CFLAGS := -I . -I ./kernel -I ./klibc -ffreestanding -Wall -Wextra \
 	-mno-sse             \
 	-mno-sse2            \
 	-mno-red-zone		 \
-	-mcmodel=kernel
+	-mcmodel=kernel		
 
 
 LFLAGS := -nostdlib -no-pie -lgcc

@@ -1,5 +1,8 @@
 #include "strings.hpp"
 #include <stddef.h>
+#include <video.hpp>
+
+//TODO: bruh will other cores mess this up?
 
 char charBuffer[20];
 
@@ -86,3 +89,49 @@ size_t strlen(const char* str) {
 
     return i - 1;
 }
+
+const char* substr(const char* src, size_t pos, size_t n) {
+    char buffer[n];
+
+    for (size_t i = 0; i < n; i++) {
+        buffer[i] = src[pos+i];
+    } 
+
+    return buffer;
+}
+
+// size_t sprintf(char* buffer, const char* value) {
+//     size_t len = strlen(value);
+//     kprint("sprintf str: %s\n", value);
+//     size_t written = 0;
+
+//     for (size_t i = 0; i < len; i++) {
+//         if (value[i] == '\0') 
+//             continue;
+//         buffer[i] = value[i];
+//         written++;
+//     } 
+//     kprint("written: %d\n", written);
+//     return written;
+// }
+
+// size_t sprintf(char* buffer, size_t value, size_t base) {
+//     const char* num_str = itoa(value, base);
+//     kprint("sprintf num: %s\n", num_str);
+//     size_t len = strlen(num_str);
+//     size_t written = 0;
+
+//     for (size_t i = 0; i < len; i++) {
+//         if (num_str[i] == '\0')
+//             continue;
+//         buffer[i] = num_str[i];
+//         written++;
+//     }
+
+//     kprint("written: %d\n", written);
+//     return written;
+// }
+
+// size_t sprintf(char* buffer, size_t value) {
+//     return sprintf(buffer, value, 10);   
+// }

@@ -20,6 +20,8 @@ namespace Vfs {
         const char* name;
         filesystem* fs;
 
+        node* parent;
+        node* children;
         node* next;
     };
 
@@ -27,6 +29,8 @@ namespace Vfs {
 
     bool mount(const char* source, const char* target);
     bool unmount(node* vfs_node);
+
+    const char* get_fs_path(const char* path);
 
     int open(const char* path, uint16_t mode);  
     int read(const char* path, size_t cnt, const char* buffer);

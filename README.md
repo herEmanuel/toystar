@@ -1,15 +1,18 @@
 # Toystar
 
-![Toystar screenshot](/os.png?raw=true "Toystar screenshot")
+![Toystar screenshot](/screenshot.png?raw=true "Toystar screenshot")
 
 Toystar is a 64 bits operating system made with the sole purpose of learning and having fun. It is currently in early development and still lacks a lot of features.
 
-### Features being worked on/planned
+### Features being worked on
 
-- PCI
-- Ext2 or FAT32 filesystem
+- A VFS (Virtual File System)
+- Scheduler
+
+### Features planned 
+
 - AHCI driver
-- Preemptive multitasking scheduler
+- Ext2 or FAT32 filesystem
 
 ... and many more!
 
@@ -17,7 +20,7 @@ Toystar is a 64 bits operating system made with the sole purpose of learning and
 
 In order to build Toystar, you will need:
 
-- A x86_64 cross compiler and GAS (Gnu assembler)
+- A x86_64 cross compiler and NASM
 - Git
 - Xorriso
 - WSL or a linux VM (if you are on windows, like me)

@@ -1,6 +1,8 @@
 #include "utils.hpp"
 #include <video.hpp>
 #include <x86_64/cpu.hpp>
+#include <assert.hpp>
+#include <strings.hpp>
 
 namespace Toystar::utils {
 
@@ -14,4 +16,12 @@ namespace Toystar::utils {
         Cpu::halt();
     }
 
+}
+
+void __assert(const char* msg, const char* file, size_t line) {
+    asm("cli");
+    
+    kprint("Assertation failed at %s, line %d: %s\n", file, line, msg);
+
+    Cpu::halt();
 }

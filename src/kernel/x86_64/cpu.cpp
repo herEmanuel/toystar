@@ -14,18 +14,6 @@
 
 namespace Cpu {
 
-    cpuid_return cpuid(uint32_t eax, uint32_t ecx) {
-        cpuid_return ret = {0, 0, 0, 0};
-
-        asm volatile(
-            "cpuid" 
-            : "=a"(ret.rax), "=b"(ret.rbx), "=c"(ret.rcx), "=d"(ret.rdx) 
-            : "a"(eax), "c"(ecx)
-        );
-
-        return ret;
-    }
-
     void init_features() {
         cpuid_return sse = cpuid(1, 0);
 
@@ -82,7 +70,7 @@ namespace Cpu {
         }
 
         while(cpus != smpInfo->cpu_count);
-        kprint("cpus: %d\n", cpus);
+        kprint("All cores have been initialized\n");
     }
 
     void core_init(stivale2_smp_info* smpInfo) {     

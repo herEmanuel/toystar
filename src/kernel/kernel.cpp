@@ -53,17 +53,16 @@ extern "C" void _start(stivale2_struct* stivale2) {
 
     videoInit(frameBufferInfo);
     
-    kprint("Kernel loaded!\n");
+    kprint("Kernel loaded\n");
 
     kprint("Cores: %d\n", smpInfo->cpu_count);
 
     init_gdt();
     load_gdt();
-    kprint("GDT loaded\n");
 
     init_idt();
     load_idt();
-    kprint("IDT loaded\n");
+    kprint("IDT and GDT loaded\n");
 
     registerInterruptHandler(0x21, (uint64_t)&keyboard_handler, 0x8E, 0);
 
@@ -84,6 +83,10 @@ extern "C" void _start(stivale2_struct* stivale2) {
     Hpet::init();
 
     Apic::init();
+
+    kprint("Apic initialized\n");
+
+    kprint("Free memory: %d KB\n", PMM::get_available_memory()/1024);
 
     Cpu::bootstrap_cores(smpInfo);
 

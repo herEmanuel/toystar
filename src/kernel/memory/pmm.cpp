@@ -114,4 +114,16 @@ namespace PMM {
 
         Lock::release(&pmm_lock);
     }
+
+    uint64_t get_available_memory() {
+        uint64_t free_pages = 0;
+
+        for (size_t i = 0; i < bitmapSize*8; i++) {
+            if (!toys::isBitSet(bitmap, i)) {
+                free_pages++;
+            }
+        }
+
+        return free_pages * PAGE_SIZE;
+    }
 }
