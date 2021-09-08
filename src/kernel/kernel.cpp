@@ -12,6 +12,8 @@
 #include "drivers/keyboard.hpp"
 #include "drivers/hpet.hpp"
 #include "scheduler/scheduler.hpp"
+#include <fs/vfs.hpp>
+#include <fs/tmpfs.hpp>
 
 #include <stdint.h>
 #include <stddef.h>
@@ -88,9 +90,30 @@ extern "C" void _start(stivale2_struct* stivale2) {
 
     kprint("Free memory: %d KB\n", PMM::get_available_memory()/1024);
 
-    Cpu::bootstrap_cores(smpInfo);
+    Tmpfs::init();
+    kprint("tmpfs initialized\n");
+    Vfs::mount("tmpfs", "/");
+    kprint("tmpfs mounted at /\n");
 
-    Sched::init();
+    auto fd = Vfs::open("/teste.txt", Vfs::Modes::CREATE);
+    kprint("file opened\n");
+    int res = Vfs::write(fd->file, 0, 14, "Hello, world!");
+    kprint("wrote to the file\n");
+    
+    if (res == -1) {
+        kprint("Bruh couldnt write that shit\n");
+    }
+
+    char buffer[14];
+    memset(buffer, 0, 14);
+
+    Vfs::read(fd->file, 0, 14, buffer);
+
+    kprint("buffer: %s\n", buffer);
+
+    // Cpu::bootstrap_cores(smpInfo);
+
+    // Sched::init();
 
     Cpu::halt();
 }

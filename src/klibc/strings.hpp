@@ -10,7 +10,7 @@ size_t atoi(const char* str);
 
 bool strcmp(const char* msg1, const char* msg2, size_t len);
 size_t strlen(const char* str);
-const char* substr(const char* src, size_t pos, size_t n);
+void substr(char* buffer, const char* src, size_t pos, size_t n);
 
 // size_t sprintf(char* buffer, const char* value);
 // size_t sprintf(char* buffer, size_t value);

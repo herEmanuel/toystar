@@ -90,14 +90,10 @@ size_t strlen(const char* str) {
     return i - 1;
 }
 
-const char* substr(const char* src, size_t pos, size_t n) {
-    char buffer[n];
-
+void substr(char* buffer, const char* src, size_t pos, size_t n) {
     for (size_t i = 0; i < n; i++) {
         buffer[i] = src[pos+i];
     } 
-
-    return buffer;
 }
 
 // size_t sprintf(char* buffer, const char* value) {

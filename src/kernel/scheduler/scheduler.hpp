@@ -7,6 +7,7 @@
 #include <lock.hpp>
 #include <x86_64/cpu.hpp>
 #include <memory/vmm.hpp>
+#include <fs/vfs.hpp>
 
 #define USER_STACK 0x000000000100000
 #define USER_STACK_SIZE PAGE_SIZE * 8
@@ -29,7 +30,10 @@ namespace Sched {
         size_t pid;
         size_t status;
 
+        Vfs::fs_node* process_directory;
+
         toys::vector<thread*> threads;
+        toys::vector<Vfs::file_description*> fd_list;
         VMM::vmm* pagemap;
     };
 
