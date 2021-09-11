@@ -8,6 +8,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+extern "C" void _isr_page_fault();
+
 namespace VMM {
 
     vmm* kernel_vmm = nullptr; 
@@ -24,7 +26,7 @@ namespace VMM {
      
         kernel_vmm->setPml4((pml4 + PHYSICAL_BASE_ADDRESS));
 
-        registerInterruptHandler(0xE, (uint64_t)&page_fault_handler, 0x8E, 0);
+        registerInterruptHandler(0xE, (uint64_t)&_isr_page_fault, 0x8E, 0);
     }
 
     vmm::vmm() {
@@ -33,7 +35,6 @@ namespace VMM {
     vmm::vmm(bool bruh) {
         if (bruh) {
             m_pml4 = (uint64_t*) (PMM::alloc(1) + PHYSICAL_BASE_ADDRESS);
-            kprint("size: %d\n", ranges.size());
         }
     }
 
@@ -126,7 +127,7 @@ namespace VMM {
 
 }
 
-__INTERRUPT__ void page_fault_handler(interrupt_frame* frame, uint64_t errCode) {
+extern "C" void isr_page_fault(interrupt_frame* frame, uint64_t errCode) {
     kprint("Page fault!");
 
     kprint("Error code: ");

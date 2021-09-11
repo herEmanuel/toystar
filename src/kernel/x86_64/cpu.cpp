@@ -7,12 +7,13 @@
 #include <drivers/hpet.hpp>
 #include <memory/pmm.hpp>
 #include <memory/heap.hpp>
-#include <lock.hpp>
 #include <x86_64/gdt.hpp>
 #include <x86_64/idt.hpp>
 #include <x86_64/apic.hpp>
 
 namespace Cpu {
+
+    size_t cpus = 1;
 
     void init_features() {
         cpuid_return sse = cpuid(1, 0);
@@ -39,9 +40,6 @@ namespace Cpu {
         while(true)
             asm("hlt");
     }
-
-    size_t cpus = 1;
-    Lock::lock_t core = 0;
 
     void bootstrap_cores(stivale2_struct_tag_smp* smpInfo) {
         for (size_t i = 0; i < smpInfo->cpu_count; i++) {
@@ -70,7 +68,7 @@ namespace Cpu {
         }
 
         while(cpus != smpInfo->cpu_count);
-        kprint("All cores have been initialized\n");
+        log("All cores have been initialized\n");
     }
 
     void core_init(stivale2_smp_info* smpInfo) {     

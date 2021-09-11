@@ -28,7 +28,6 @@ extern reschedule
  ;  this will only return if there was no running processe before 
  ;  and if there is no process waiting for cpu time
 
-
 reschedule_handler:
     cld
 

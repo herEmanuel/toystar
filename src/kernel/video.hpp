@@ -59,4 +59,19 @@ void kprint(const char* msg, T value, Args... args) {
     }
 }
 
+void log(const char* msg);
+
+template<typename T, typename... Args>
+void log(const char* msg, T value, Args... args) {
+    printChar('[', 0xF8F0FB);
+    printChar('I', 0x6320EE);
+    printChar('N', 0x6320EE);
+    printChar('F', 0x6320EE);
+    printChar('O', 0x6320EE);
+    printChar(']', 0xF8F0FB);
+    printChar(' ', 0x0);
+
+    kprint(msg, value, args...);
+}
+
 #endif

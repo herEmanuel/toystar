@@ -4,8 +4,6 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#define __INTERRUPT__ __attribute__((interrupt))
-
 struct interrupt_frame {
     uint64_t rip;
     uint64_t cs;

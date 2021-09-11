@@ -21,8 +21,8 @@ toys::vector<Sched::thread*> thread_list;
 Sched::process* init_process = nullptr;
 
 void init_proc() {
-    asm volatile("xor %rax, %rax");
-    asm volatile("int $0x80");
+    // asm volatile("xor %rax, %rax");
+    // asm volatile("int $0x80");
     kprint("Main process started!\n");
     while (true);
 }
@@ -38,7 +38,7 @@ namespace Sched {
         init_process = create_process((uint64_t)&init_proc, 0x1b, newVmm);
         queue(init_process->threads[0]);
    
-        Apic::localApic->calibrate_timer(3000);
+        Apic::localApic->calibrate_timer(30);
     }
 
     process* create_process(uint64_t rip, uint64_t cs, VMM::vmm* pagemap) {

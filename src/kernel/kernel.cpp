@@ -55,18 +55,16 @@ extern "C" void _start(stivale2_struct* stivale2) {
 
     videoInit(frameBufferInfo);
     
-    kprint("Kernel loaded\n");
+    log("Kernel loaded\n");
 
-    kprint("Cores: %d\n", smpInfo->cpu_count);
+    log("Cores: %d\n", smpInfo->cpu_count);
 
     init_gdt();
     load_gdt();
 
     init_idt();
     load_idt();
-    kprint("IDT and GDT loaded\n");
-
-    registerInterruptHandler(0x21, (uint64_t)&keyboard_handler, 0x8E, 0);
+    log("IDT and GDT loaded\n");
 
     PMM::init(memmapInfo->memmap, memmapInfo->entries);
 
@@ -76,19 +74,20 @@ extern "C" void _start(stivale2_struct* stivale2) {
 
     _init();
 
-    kprint("VMM and PMM initialized\n");
+    log("VMM and PMM initialized\n");
 
     // PCI::enumerateDevices();
 
     Acpi::init(rsdp);
 
     Hpet::init();
+    Keyboard::init();
 
     Apic::init();
 
-    kprint("Apic initialized\n");
+    log("Apic initialized\n");
 
-    kprint("Free memory: %d KB\n", PMM::get_available_memory()/1024);
+    log("Free memory: %d KB\n", PMM::get_available_memory()/1024);
 
     // Tmpfs::init();
     // kprint("tmpfs initialized\n");
@@ -127,6 +126,8 @@ extern "C" void _start(stivale2_struct* stivale2) {
     // kprint("node path: %s\n", otherFile->file->fs->relative_to_absolute(otherFile->file, ""));
 
     Cpu::bootstrap_cores(smpInfo);
+
+    log("Initializing scheduler\n");
 
     Sched::init();
 

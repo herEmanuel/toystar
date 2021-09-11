@@ -60,7 +60,7 @@ void videoInit(stivale2_struct_tag_framebuffer* frameBufferTag) {
     screen_width = frameBufferTag->framebuffer_width;
     screen_height = frameBufferTag->framebuffer_height;
 
-    clearScreen(0x0);
+    clearScreen(0x8075FF);
 }
 
 void printChar(char c, uint32_t color) {
@@ -104,5 +104,17 @@ void kprint(size_t num) {
 
 void kprint(size_t num, size_t base) {
     const char* msg = itoa(num, base);
+    kprint(msg);
+}
+
+void log(const char* msg) {
+    printChar('[', 0xF8F0FB);
+    printChar('I', 0x6320EE);
+    printChar('N', 0x6320EE);
+    printChar('F', 0x6320EE);
+    printChar('O', 0x6320EE);
+    printChar(']', 0xF8F0FB);
+    printChar(' ', 0x0);
+
     kprint(msg);
 }

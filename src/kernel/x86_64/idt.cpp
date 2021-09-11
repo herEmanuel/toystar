@@ -5,14 +5,24 @@
 #include <video.hpp>
 #include <memory.hpp>
 #include <x86_64/apic.hpp>
+#include <x86_64/cpu.hpp>
 
-__INTERRUPT__ void division_by_zero_handler(interrupt_frame* intFrame);
-__INTERRUPT__ void breakpoint_handler(interrupt_frame* intFrame);
-__INTERRUPT__ void double_fault_handler(interrupt_frame* intFrame);
-__INTERRUPT__ void general_protection_handler(interrupt_frame* intFrame, uint64_t errCode);
+extern "C" {
 
-extern "C" void reschedule_handler();
-extern "C" void syscall_entry();
+    void isr_div_by_zero(interrupt_frame* iframe);
+    void isr_breakpoint(interrupt_frame* iframe);
+    void isr_double_fault(interrupt_frame* iframe);
+    void isr_general_protection(interrupt_frame* iframe, uint64_t errCode);
+
+    void _isr_div_by_zero();
+    void _isr_breakpoint();
+    void _isr_double_fault();
+    void _isr_general_protection();
+
+    void reschedule_handler();
+    void syscall_entry();
+
+}
 
 static IDTGate idt[256];
 static IDTDescriptor idtDescriptor;
@@ -30,10 +40,10 @@ void registerInterruptHandler(size_t index, uint64_t addr, uint8_t gateType, uin
 void init_idt() {
     memset(idt, 0, sizeof(idt));
 
-    registerInterruptHandler(0x0, (uint64_t)&division_by_zero_handler, 0x8E, 0);
-    registerInterruptHandler(0x3, (uint64_t)&breakpoint_handler, 0x8E, 0);
-    registerInterruptHandler(0x8, (uint64_t)&double_fault_handler, 0x8E, 0);
-    registerInterruptHandler(0xD, (uint64_t)&general_protection_handler, 0x8E, 0);
+    registerInterruptHandler(0x0, (uint64_t)&_isr_div_by_zero, 0x8E, 0);
+    registerInterruptHandler(0x3, (uint64_t)&_isr_breakpoint, 0x8E, 0);
+    registerInterruptHandler(0x8, (uint64_t)&_isr_double_fault, 0x8E, 0);
+    registerInterruptHandler(0xD, (uint64_t)&_isr_general_protection, 0x8E, 0);
     registerInterruptHandler(0x20, (uint64_t)&reschedule_handler, 0x8E, 0);
     registerInterruptHandler(0x80, (uint64_t)&syscall_entry, 0xEE, 0);
 
@@ -44,29 +54,32 @@ void load_idt() {
     asm volatile("lidt (%0)" :: "r"(&idtDescriptor));
 }
 
-// INTERRUPT HANDLERS
+extern "C" {
 
-__INTERRUPT__ void division_by_zero_handler(interrupt_frame* intFrame) {
-    kprint("Division by zero!");
-    
-    Cpu::halt();
-}
+    void isr_div_by_zero(interrupt_frame* iframe) {
+        kprint("Division by zero!");
+        
+        Cpu::halt();
+    }
 
-__INTERRUPT__ void breakpoint_handler(interrupt_frame* intFrame) {
-    kprint("Breakpoint");
-    
-    Cpu::halt();
-}
+    void isr_breakpoint(interrupt_frame* iframe) {
+        kprint("Breakpoint");
+        
+        Cpu::halt();
+    }
 
-__INTERRUPT__ void double_fault_handler(interrupt_frame* intFrame) {
-    kprint("Double fault!");
-    
-    Cpu::halt();
-}
-__INTERRUPT__ void general_protection_handler(interrupt_frame* intFrame, uint64_t errCode) {
-    kprint("General protection exception!");
+    void isr_double_fault(interrupt_frame* iframe) {
+        kprint("Double fault!");
+        
+        Cpu::halt();
+    }
 
-    kprint("Error code: %x\n", errCode);
+    void isr_general_protection(interrupt_frame* iframe, uint64_t errCode) {
+        kprint("General protection exception!");
 
-    Cpu::halt();
+        kprint("Error code: %x\n", errCode);
+
+        Cpu::halt();
+    }
+
 }
