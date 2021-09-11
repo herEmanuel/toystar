@@ -25,19 +25,19 @@ namespace VMM {
         uint64_t* m_pml4;
         toys::vector<MemArea*> ranges;
 
-        uint64_t* getNextLevel(uint64_t* currLevelPtr, uint16_t entry);
+        uint64_t* get_next_level(uint64_t* currLevelPtr, uint16_t entry);
     public:
         vmm();
         vmm(bool bruh);
-        void mapPage(uint64_t virt, uint64_t phys, uint16_t flags);
-        void mapRangeRaw(uint64_t virt, uint64_t phys, size_t length, size_t prot);
-        void unmapPage(uint64_t virt);
-        void unmapRangeRaw(uint64_t virt, size_t length);
-        void mapRange(uint64_t virt, uint64_t phys, size_t length, size_t prot, size_t flags);
-        uint64_t virtualToPhysical(uint64_t virt);
-        void switchPagemap();
+        void map_page(uint64_t virt, uint64_t phys, uint16_t flags);
+        void map_range_raw(uint64_t virt, uint64_t phys, size_t length, size_t prot);
+        void unmap_page(uint64_t virt);
+        void unmap_range_raw(uint64_t virt, size_t length);
+        void map_range(uint64_t virt, uint64_t phys, size_t length, size_t prot, size_t flags);
+        uint64_t virtual_to_physical(uint64_t virt);
+        void switch_pagemap();
 
-        void setPml4(uint64_t pml4);
+        void set_pml4(uint64_t pml4);
 
         inline void invlpg(uint64_t addr) {
             asm volatile ("invlpg (%0)" :: "r"(addr));

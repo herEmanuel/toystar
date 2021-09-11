@@ -9,7 +9,7 @@ namespace Toystar::utils {
     void panic(const char* msg) {
         asm("cli");
         
-        clearScreen(0xff1340);
+        clear_screen(0xff1340);
         
         kprint("Kernel panic: %s\n", msg);
 

@@ -39,16 +39,16 @@ namespace Heap {
         baseAddr = (uint64_t) firstBlock;
     }
 
-    size_t BuddyAllocator::indexFromOrder(size_t order) {
+    size_t BuddyAllocator::index_from_order(size_t order) {
         return MAX_POWER - order;
     }
 
-    int BuddyAllocator::findBuddy(size_t order, size_t i) {
+    int BuddyAllocator::find_buddy(size_t order, size_t i) {
         if (order <= MIN_POWER) {
             return -1;
         }
 
-        size_t index = indexFromOrder(order);
+        size_t index = index_from_order(order);
 
         if (!bucketList[index]) {
             return -1;
@@ -81,12 +81,12 @@ namespace Heap {
         return -1;
     }
 
-    bool BuddyAllocator::splitBlock(size_t order) {
+    bool BuddyAllocator::split_block(size_t order) {
         if (order <= MIN_POWER && order > MAX_POWER) {
             return false;
         }
 
-        size_t index = indexFromOrder(order);
+        size_t index = index_from_order(order);
 
         if (!bucketList[index]) {
             return false;
@@ -107,7 +107,7 @@ namespace Heap {
         return true;
     }
 
-    bool BuddyAllocator::tryToMerge(size_t order) {
+    bool BuddyAllocator::try_to_merge(size_t order) {
         // kprint("MERGING ORDER: %d\n", order);
 
         if (order > MAX_POWER) {
@@ -116,13 +116,13 @@ namespace Heap {
 
         int buddy = 0;
         bool merged = false;
-        size_t index = indexFromOrder(order);
+        size_t index = index_from_order(order);
 
         size_t i = 0;
         Block* curr = bucketList[index];
     
         while (curr != nullptr) {
-            buddy = findBuddy(order, i);
+            buddy = find_buddy(order, i);
         
             if (buddy >= 0) {
                 Block** p = &bucketList[index];
@@ -178,20 +178,20 @@ namespace Heap {
             order++;
         }
 
-        size_t index = indexFromOrder(order);
+        size_t index = index_from_order(order);
 
         Lock::acquire(&heap_lock);
 
         if (!bucketList[index]) {
             size_t t = order + 1;
 
-            while (!splitBlock(t++)) {
+            while (!split_block(t++)) {
                 if (t > MAX_POWER) { return nullptr; }
             }
 
             t--;
             while (--t > order) {
-                splitBlock(t);
+                split_block(t);
             }
         } 
 
@@ -216,14 +216,14 @@ namespace Heap {
         while ((1 << order++) < block->size);
         order--;
 
-        size_t index = indexFromOrder(order);
+        size_t index = index_from_order(order);
     
         Lock::acquire(&heap_lock);
 
         block->next = bucketList[index];
         bucketList[index] = block;
 
-        while (order < MAX_POWER && tryToMerge(order++));
+        while (order < MAX_POWER && try_to_merge(order++));
 
         Lock::release(&heap_lock);
     }
@@ -251,19 +251,3 @@ namespace Heap {
 void* krealloc(void* ptr, size_t bytes) {
     return allocator->krealloc(ptr, bytes);
 }
-
-void* operator new(size_t size) { return allocator->kmalloc(size); }
-
-void* operator new[](size_t size) { return allocator->kmalloc(size); }
-
-void* operator new(size_t size, void* p) { return p; }
-
-void* operator new[](size_t size, void* p) { return p; }
-
-void operator delete(void* ptr) { allocator->kfree(ptr); }
-
-void operator delete(void* ptr, size_t) { allocator->kfree(ptr); }
-
-void operator delete[](void* ptr) { allocator->kfree(ptr); }
-
-void operator delete[](void* ptr, size_t) { allocator->kfree(ptr); }

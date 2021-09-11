@@ -49,7 +49,7 @@ namespace Apic {
         void write(const uint32_t reg, const uint32_t value);
         uint32_t read(const uint32_t reg);
 
-        void setRedirection(uint8_t vector, uint32_t gsi, uint32_t flags);
+        void set_redirection(uint8_t vector, uint32_t gsi, uint32_t flags);
 
         uint8_t max_gsi();
         void mask_gsi(uint32_t gsi);

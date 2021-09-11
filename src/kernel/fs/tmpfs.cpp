@@ -37,7 +37,7 @@ namespace Tmpfs {
         root_tmpfs_node->parent = nullptr;
     }   
 
-    const char* tmpfs::getName() {
+    const char* tmpfs::get_name() {
         return name;
     }
 

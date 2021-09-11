@@ -1,7 +1,7 @@
 #include "pic.hpp"
 #include <kernel/io.hpp>
 
-void remapPIC(size_t vecOffset1, size_t vecOffset2) {
+void remap_pic(size_t vecOffset1, size_t vecOffset2) {
     outb(MASTER_COMMAND, 0x11);
     outb(SLAVE_COMMAND, 0x11);
 

@@ -9,6 +9,6 @@
 #define SLAVE_COMMAND 0xA0
 #define SLAVE_DATA 0xA1
 
-void remapPIC(size_t vecOffset1, size_t vecOffset2);
+void remap_pic(size_t vecOffset1, size_t vecOffset2);
 
 #endif

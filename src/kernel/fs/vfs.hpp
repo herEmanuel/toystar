@@ -24,7 +24,7 @@ namespace Vfs {
     class filesystem {
     public:
 
-        virtual const char* getName() { return " "; };
+        virtual const char* get_name() { return " "; };
 
         virtual const char* relative_to_absolute(fs_node* node, const char* path) { return " "; };
  

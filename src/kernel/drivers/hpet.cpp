@@ -10,7 +10,7 @@ namespace Hpet {
     hpetMem* hpet;
 
     void init() {
-        hpet_table* table = reinterpret_cast<hpet_table*>(Acpi::findTable("HPET"));
+        hpet_table* table = reinterpret_cast<hpet_table*>(Acpi::find_table("HPET"));
         hpet = reinterpret_cast<hpetMem*>(table->address + PHYSICAL_BASE_ADDRESS);
         clock = hpet->general_capabilities >> 32;
 

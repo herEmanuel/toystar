@@ -13,20 +13,20 @@ static uint16_t screen_height;
 static uint16_t cursor_x;
 static uint16_t cursor_y;
 
-void incrementCursorX(uint16_t amount) {
+void increment_cursor_x(uint16_t amount) {
     cursor_x += amount;
     if (cursor_x >= screen_width) {
         cursor_x = 0;
         cursor_y += 18;
 
         if (cursor_y >= screen_height) {
-            clearScreen(0x0);
+            clear_screen(0x0);
         }
 
     }
 }
 
-void putPixel(uint16_t x, uint16_t y, uint32_t color) {
+void put_pixel(uint16_t x, uint16_t y, uint32_t color) {
     if (x >= screen_width || y >= screen_height) { return; }
 
     frameBuffer[y * (pitch / 4) + x] = color;
@@ -49,21 +49,21 @@ void rect(uint16_t x, uint16_t y, uint16_t sizeX, uint16_t sizeY, uint32_t color
     cursor_y = 0;
 }
 
-void clearScreen(uint32_t color) {
+void clear_screen(uint32_t color) {
     rect(0, 0, screen_width, screen_height, color);
 }
 
-void videoInit(stivale2_struct_tag_framebuffer* frameBufferTag) {
+void video_init(stivale2_struct_tag_framebuffer* frameBufferTag) {
     frameBuffer = (uint32_t*)frameBufferTag->framebuffer_addr;
     pitch = frameBufferTag->framebuffer_pitch;
     bpp = frameBufferTag->framebuffer_bpp;
     screen_width = frameBufferTag->framebuffer_width;
     screen_height = frameBufferTag->framebuffer_height;
 
-    clearScreen(0x8075FF);
+    clear_screen(0x8075FF);
 }
 
-void printChar(char c, uint32_t color) {
+void print_char(char c, uint32_t color) {
 
     switch (c) {
         case '\n':
@@ -80,19 +80,19 @@ void printChar(char c, uint32_t color) {
     for (int b = 0; b < char_height; b++) {
         for (int j = 0; j < char_width; j++) {
             if ((font[offset + b] >> (7 - j)) & 1) {
-                frameBuffer[(b + cursor_y) * (pitch / 4) + j + cursor_x] = color;
+                frameBuffer[(b + cursor_y) * (pitch / sizeof(uint32_t)) + j + cursor_x] = color;
             }
         }
     }
 
-    incrementCursorX(10);
+    increment_cursor_x(10);
 }
 
 void kprint(const char* msg) {
     size_t i = 0;
 
     while (msg[i]) {
-        printChar(msg[i], 0xffffff);
+        print_char(msg[i], 0xffffff);
         i++;
     }
 }
@@ -108,13 +108,13 @@ void kprint(size_t num, size_t base) {
 }
 
 void log(const char* msg) {
-    printChar('[', 0xF8F0FB);
-    printChar('I', 0x6320EE);
-    printChar('N', 0x6320EE);
-    printChar('F', 0x6320EE);
-    printChar('O', 0x6320EE);
-    printChar(']', 0xF8F0FB);
-    printChar(' ', 0x0);
+    print_char('[', 0xF8F0FB);
+    print_char('I', 0x6320EE);
+    print_char('N', 0x6320EE);
+    print_char('F', 0x6320EE);
+    print_char('O', 0x6320EE);
+    print_char(']', 0xF8F0FB);
+    print_char(' ', 0x0);
 
     kprint(msg);
 }

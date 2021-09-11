@@ -27,7 +27,7 @@ struct IDTGate {
     uint32_t zero;
 } __attribute__((packed));  
 
-void registerInterruptHandler(size_t index, uint64_t addr, uint8_t gateType, uint8_t ist);
+void register_interrupt_handler(size_t index, uint64_t addr, uint8_t gateType, uint8_t ist);
 void init_idt();
 void load_idt();
 

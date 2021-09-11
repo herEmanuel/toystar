@@ -19,7 +19,7 @@ namespace Keyboard {
     };
 
     void init() {
-        registerInterruptHandler(0x21, (uint64_t)&_isr_keyboard, 0x8E, 0);  
+        register_interrupt_handler(0x21, (uint64_t)&_isr_keyboard, 0x8E, 0);  
     }
 
     extern "C" void isr_keyboard(interrupt_frame* iframe) {
@@ -69,7 +69,7 @@ namespace Keyboard {
             buffer = scNormal[key];
         }
 
-        printChar(buffer, 0xffffff);
+        print_char(buffer, 0xffffff);
         Apic::localApic->eoi();
     }
 

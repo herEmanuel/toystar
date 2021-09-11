@@ -65,7 +65,7 @@ namespace PMM {
             size_t length = mmap[i].length / PAGE_SIZE;
 
             for (size_t i = pageNumber; i <= pageNumber + length; i++) {
-                toys::clearBit(bitmap, i);
+                toys::clear_bit(bitmap, i);
             }
         }
     }
@@ -76,14 +76,14 @@ namespace PMM {
         Lock::acquire(&pmm_lock);
 
         for (size_t i = 0; i < bitmapSize*8; i++) {
-            if (!toys::isBitSet(bitmap, i)) {
+            if (!toys::is_bit_set(bitmap, i)) {
                 currentCount++;
 
                 if (currentCount == count) {
                     size_t page = i - count + 1;
                     
                     for (size_t c = page; c < page + count; c++) {
-                        toys::setBit(bitmap, c);
+                        toys::set_bit(bitmap, c);
                     }
 
                     uint64_t addr = page * PAGE_SIZE;
@@ -109,7 +109,7 @@ namespace PMM {
         Lock::acquire(&pmm_lock);
 
         for (size_t i = page; i < page + count; i++) {
-            toys::clearBit(bitmap, i);
+            toys::clear_bit(bitmap, i);
         }
 
         Lock::release(&pmm_lock);
@@ -119,7 +119,7 @@ namespace PMM {
         uint64_t free_pages = 0;
 
         for (size_t i = 0; i < bitmapSize*8; i++) {
-            if (!toys::isBitSet(bitmap, i)) {
+            if (!toys::is_bit_set(bitmap, i)) {
                 free_pages++;
             }
         }

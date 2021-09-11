@@ -7,15 +7,15 @@
 #include <boot/stivale2.hpp>
 #include <strings.hpp>
 
-void videoInit(stivale2_struct_tag_framebuffer* frameBufferTag);
+void video_init(stivale2_struct_tag_framebuffer* frameBufferTag);
 
-void incrementCursorX(uint16_t amount);
+void increment_cursor_x(uint16_t amount);
 
-void putPixel(uint16_t x, uint16_t y, uint32_t color);
+void put_pixel(uint16_t x, uint16_t y, uint32_t color);
 void rect(uint16_t x, uint16_t y, uint16_t sizeX, uint16_t sizeY, uint32_t color);
-void clearScreen(uint32_t color);
+void clear_screen(uint32_t color);
 
-void printChar(char c, uint32_t color);
+void print_char(char c, uint32_t color);
 
 void kprint(const char* msg);
 void kprint(size_t num);
@@ -42,7 +42,7 @@ void kprint(const char* msg, T value, Args... args) {
                     break;
 
                 case '%':
-                    printChar('%', 0xffffff);
+                    print_char('%', 0xffffff);
                     break;
 
                 default:
@@ -54,7 +54,7 @@ void kprint(const char* msg, T value, Args... args) {
             return;
         }
 
-        printChar(msg[i], 0xffffff);
+        print_char(msg[i], 0xffffff);
         i++;
     }
 }
@@ -63,13 +63,13 @@ void log(const char* msg);
 
 template<typename T, typename... Args>
 void log(const char* msg, T value, Args... args) {
-    printChar('[', 0xF8F0FB);
-    printChar('I', 0x6320EE);
-    printChar('N', 0x6320EE);
-    printChar('F', 0x6320EE);
-    printChar('O', 0x6320EE);
-    printChar(']', 0xF8F0FB);
-    printChar(' ', 0x0);
+    print_char('[', 0xF8F0FB);
+    print_char('I', 0x6320EE);
+    print_char('N', 0x6320EE);
+    print_char('F', 0x6320EE);
+    print_char('O', 0x6320EE);
+    print_char(']', 0xF8F0FB);
+    print_char(' ', 0x0);
 
     kprint(msg, value, args...);
 }

@@ -9,7 +9,7 @@
 
 namespace PCI {
 
-    void setAddress(uint8_t bus, uint8_t device, uint8_t function, uint8_t offset) {
+    void set_address(uint8_t bus, uint8_t device, uint8_t function, uint8_t offset) {
         uint32_t addr = 0;
 
         addr |= offset & 0xFC; // offsets are always aligned to 32 bits
@@ -21,24 +21,24 @@ namespace PCI {
         outl(CONFIG_ADDR, addr);
     }
 
-    uint32_t readDoubleWord(uint8_t bus, uint8_t device, uint8_t function, uint8_t offset) {
+    uint32_t read_double_word(uint8_t bus, uint8_t device, uint8_t function, uint8_t offset) {
         uint32_t value;
 
-        setAddress(bus, device, function, offset);
+        set_address(bus, device, function, offset);
 
         value = inl(CONFIG_DATA);
         return value;
     }
 
     bool exists(uint8_t bus, uint8_t device, uint8_t function) {
-        if (readDoubleWord(bus, device, function, 0) == 0xFFFFFFFF) {
+        if (read_double_word(bus, device, function, 0) == 0xFFFFFFFF) {
             return false;
         }
 
         return true;
     }
 
-    void enumerateDevices() {   
+    void enumerate_devices() {   
         for (size_t bus = 0; bus < 256; bus++) {
             for (size_t slot = 0; slot < 32; slot++) {
                 for (size_t function = 0; function < 8; function++) {

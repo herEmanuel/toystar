@@ -23,7 +23,7 @@ namespace Vfs {
         filesystem* fs = nullptr;
 
         for (size_t i = 0; i < fses.size(); i++) {
-            if (strncmp(fses[i]->getName(), source, strlen(fses[i]->getName()))) {
+            if (strncmp(fses[i]->get_name(), source, strlen(fses[i]->get_name()))) {
                 fs = fses[i];
                 break;
             }

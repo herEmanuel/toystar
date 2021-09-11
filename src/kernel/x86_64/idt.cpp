@@ -27,7 +27,7 @@ extern "C" {
 static IDTGate idt[256];
 static IDTDescriptor idtDescriptor;
 
-void registerInterruptHandler(size_t index, uint64_t addr, uint8_t gateType, uint8_t ist) {
+void register_interrupt_handler(size_t index, uint64_t addr, uint8_t gateType, uint8_t ist) {
     idt[index].offset1 = addr & 0xFFFF;
     idt[index].offset2 = (addr >> 16) & 0xFFFF;
     idt[index].offset3 = addr >> 32;
@@ -40,12 +40,12 @@ void registerInterruptHandler(size_t index, uint64_t addr, uint8_t gateType, uin
 void init_idt() {
     memset(idt, 0, sizeof(idt));
 
-    registerInterruptHandler(0x0, (uint64_t)&_isr_div_by_zero, 0x8E, 0);
-    registerInterruptHandler(0x3, (uint64_t)&_isr_breakpoint, 0x8E, 0);
-    registerInterruptHandler(0x8, (uint64_t)&_isr_double_fault, 0x8E, 0);
-    registerInterruptHandler(0xD, (uint64_t)&_isr_general_protection, 0x8E, 0);
-    registerInterruptHandler(0x20, (uint64_t)&reschedule_handler, 0x8E, 0);
-    registerInterruptHandler(0x80, (uint64_t)&syscall_entry, 0xEE, 0);
+    register_interrupt_handler(0x0, (uint64_t)&_isr_div_by_zero, 0x8E, 0);
+    register_interrupt_handler(0x3, (uint64_t)&_isr_breakpoint, 0x8E, 0);
+    register_interrupt_handler(0x8, (uint64_t)&_isr_double_fault, 0x8E, 0);
+    register_interrupt_handler(0xD, (uint64_t)&_isr_general_protection, 0x8E, 0);
+    register_interrupt_handler(0x20, (uint64_t)&reschedule_handler, 0x8E, 0);
+    register_interrupt_handler(0x80, (uint64_t)&syscall_entry, 0xEE, 0);
 
     idtDescriptor = {sizeof(idt), (uint64_t)&idt};
 }

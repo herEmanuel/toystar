@@ -37,9 +37,9 @@ namespace PCI {
     };
 
     void init();
-    void enumerateDevices();
-    void setAddress(uint8_t bus, uint8_t device, uint8_t function, uint8_t offset);
-    uint32_t readDoubleWord(uint8_t bus, uint8_t device, uint8_t function, uint8_t offset);
+    void enumerate_devices();
+    void set_address(uint8_t bus, uint8_t device, uint8_t function, uint8_t offset);
+    uint32_t read_double_word(uint8_t bus, uint8_t device, uint8_t function, uint8_t offset);
     bool exists(uint8_t bus, uint8_t device, uint8_t function);
 
 }

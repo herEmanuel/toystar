@@ -9,20 +9,20 @@ static rsdt* rsdt = nullptr;
 namespace Acpi {
 
     //TODO: support to xsdt
-    void init(stivale2_struct_tag_rsdp* rsdpTag) {
-        rsdp* rsdpStruct = reinterpret_cast<struct rsdp*>(rsdpTag->rsdp);
+    void init(stivale2_struct_tag_rsdp* rsdp_tag) {
+        rsdp* rsdp_struct = reinterpret_cast<struct rsdp*>(rsdp_tag->rsdp);
 
-        rsdt = reinterpret_cast<struct rsdt*>(rsdpStruct->rsdt_addr + PHYSICAL_BASE_ADDRESS);
+        rsdt = reinterpret_cast<struct rsdt*>(rsdp_struct->rsdt_addr + PHYSICAL_BASE_ADDRESS);
     }
 
-    void* findTable(const char* signature) {
+    void* find_table(const char* signature) {
         size_t tablesNum = (rsdt->header.length - sizeof(sdt))/4;
 
         for (size_t i = 0; i < tablesNum; i++) {
-            sdt* currentTable = reinterpret_cast<sdt*>(rsdt->tables[i] + PHYSICAL_BASE_ADDRESS);
+            sdt* current_table = reinterpret_cast<sdt*>(rsdt->tables[i] + PHYSICAL_BASE_ADDRESS);
 
-            if (strncmp(currentTable->signature, signature, 4)) {
-                return reinterpret_cast<void*>(currentTable);
+            if (strncmp(current_table->signature, signature, 4)) {
+                return reinterpret_cast<void*>(current_table);
             }
         }
 

@@ -38,8 +38,8 @@ struct rsdt {
 
 namespace Acpi {
 
-    void init(stivale2_struct_tag_rsdp* rsdpTag);
-    void* findTable(const char* signature);
+    void init(stivale2_struct_tag_rsdp* rsdp_tag);
+    void* find_table(const char* signature);
 
 }
 

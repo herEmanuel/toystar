@@ -12,7 +12,7 @@ namespace Apic {
     xapic* localApic = nullptr;
 
     void init() {
-        madt_table* madtTable = reinterpret_cast<madt_table*>(Acpi::findTable("APIC"));
+        madt_table* madtTable = reinterpret_cast<madt_table*>(Acpi::find_table("APIC"));
         madt_header* madtHeader = reinterpret_cast<madt_header*>(madtTable->madt_entries);
 
         size_t entries = madtTable->header.length - sizeof(sdt) - 8;
@@ -64,7 +64,7 @@ namespace Apic {
 
             if (!baseGsi) {
                 for (size_t i = 0; i < 16; i++) {
-                    ioApic.setRedirection(i + 0x20, i, 0);
+                    ioApic.set_redirection(i + 0x20, i, 0);
                 }
             }
 
@@ -73,7 +73,7 @@ namespace Apic {
                 if (isos[i]->gsi < baseGsi || isos[i]->gsi >= baseGsi + max) 
                     continue;
                 
-                ioApic.setRedirection(isos[i]->irq + 0x20, isos[i]->gsi, isos[i]->flags);
+                ioApic.set_redirection(isos[i]->irq + 0x20, isos[i]->gsi, isos[i]->flags);
             }
 
             for (size_t i = 0; i < max; i++) {
@@ -85,7 +85,7 @@ namespace Apic {
             }
         }
 
-        remapPIC(0x20, 0x28);
+        remap_pic(0x20, 0x28);
 
         if (addressOverride.size() != 0) {
             localApic = new xapic(addressOverride[0]->addr);
@@ -151,7 +151,7 @@ namespace Apic {
         return *reinterpret_cast<uint32_t*>(base_address + 0x10);
     }
 
-    void ioapic::setRedirection(uint8_t vector, uint32_t gsi, uint32_t flags) {
+    void ioapic::set_redirection(uint8_t vector, uint32_t gsi, uint32_t flags) {
         uint32_t reg = ((gsi - gsib) * 2) + 0x10;
         uint64_t redirection = vector;
 

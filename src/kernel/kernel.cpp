@@ -22,42 +22,42 @@
 #include <vector.hpp>
 #include <map.hpp>
 
-void* getTag(stivale2_struct* firstTag, uint64_t tagId) {
-    stivale2_tag *currentTag = (stivale2_tag*)firstTag->tags;
+void* get_tag(stivale2_struct* first_tag, uint64_t tag_id) {
+    stivale2_tag *current_tag = (stivale2_tag*)first_tag->tags;
 
     while (true) {
-        if (!currentTag) {
+        if (!current_tag) {
             return nullptr;
         }
 
-        if (currentTag->identifier == tagId) {
-            return currentTag;
+        if (current_tag->identifier == tag_id) {
+            return current_tag;
         }
 
-        currentTag = (stivale2_tag*)currentTag->next;
+        current_tag = (stivale2_tag*)current_tag->next;
     }
 }
 
 extern "C" void _init();
 
 extern "C" void _start(stivale2_struct* stivale2) {
-    stivale2_struct_tag_framebuffer* frameBufferInfo;
-    frameBufferInfo = (stivale2_struct_tag_framebuffer*)getTag(stivale2, STIVALE2_STRUCT_TAG_FRAMEBUFFER_ID);
+    stivale2_struct_tag_framebuffer* fb_info;
+    fb_info = (stivale2_struct_tag_framebuffer*)get_tag(stivale2, STIVALE2_STRUCT_TAG_FRAMEBUFFER_ID);
 
-    stivale2_struct_tag_memmap* memmapInfo;
-    memmapInfo = (stivale2_struct_tag_memmap*)getTag(stivale2, STIVALE2_STRUCT_TAG_MEMMAP_ID);
+    stivale2_struct_tag_memmap* memmap_info;
+    memmap_info = (stivale2_struct_tag_memmap*)get_tag(stivale2, STIVALE2_STRUCT_TAG_MEMMAP_ID);
 
     stivale2_struct_tag_rsdp* rsdp;
-    rsdp = (stivale2_struct_tag_rsdp*)getTag(stivale2, STIVALE2_STRUCT_TAG_RSDP_ID);
+    rsdp = (stivale2_struct_tag_rsdp*)get_tag(stivale2, STIVALE2_STRUCT_TAG_RSDP_ID);
 
-    stivale2_struct_tag_smp* smpInfo;
-    smpInfo = (stivale2_struct_tag_smp*)getTag(stivale2, STIVALE2_STRUCT_TAG_SMP_ID);
+    stivale2_struct_tag_smp* smp_info;
+    smp_info = (stivale2_struct_tag_smp*)get_tag(stivale2, STIVALE2_STRUCT_TAG_SMP_ID);
 
-    videoInit(frameBufferInfo);
+    video_init(fb_info);
     
     log("Kernel loaded\n");
 
-    log("Cores: %d\n", smpInfo->cpu_count);
+    log("Cores: %d\n", smp_info->cpu_count);
 
     init_gdt();
     load_gdt();
@@ -66,7 +66,7 @@ extern "C" void _start(stivale2_struct* stivale2) {
     load_idt();
     log("IDT and GDT loaded\n");
 
-    PMM::init(memmapInfo->memmap, memmapInfo->entries);
+    PMM::init(memmap_info->memmap, memmap_info->entries);
 
     Heap::init();
     
@@ -125,7 +125,7 @@ extern "C" void _start(stivale2_struct* stivale2) {
 
     // kprint("node path: %s\n", otherFile->file->fs->relative_to_absolute(otherFile->file, ""));
 
-    Cpu::bootstrap_cores(smpInfo);
+    Cpu::bootstrap_cores(smp_info);
 
     log("Initializing scheduler\n");
 

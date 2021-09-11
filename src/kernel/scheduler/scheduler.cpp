@@ -31,9 +31,9 @@ namespace Sched {
 
     void init() {
         VMM::vmm* newVmm = new VMM::vmm(true);
-        newVmm->mapRangeRaw(PHYSICAL_BASE_ADDRESS, 0, 0x100000000, 0b111);
-        newVmm->mapRangeRaw(KERNEL_BASE, 0, 0x80000000, 0b111);
-        newVmm->mapRangeRaw(0, 0, 0x100000000, 0b111);
+        newVmm->map_range_raw(PHYSICAL_BASE_ADDRESS, 0, 0x100000000, 0b111);
+        newVmm->map_range_raw(KERNEL_BASE, 0, 0x80000000, 0b111);
+        newVmm->map_range_raw(0, 0, 0x100000000, 0b111);
  
         init_process = create_process((uint64_t)&init_proc, 0x1b, newVmm);
         queue(init_process->threads[0]);
@@ -63,7 +63,7 @@ namespace Sched {
             //userland process
             mainThread->kernel_stack = reinterpret_cast<uint64_t>(PMM::alloc(1) + PAGE_SIZE + PHYSICAL_BASE_ADDRESS);
 
-            pagemap->mapRange(USER_STACK, stack, USER_STACK_SIZE, 0b111, 0);
+            pagemap->map_range(USER_STACK, stack, USER_STACK_SIZE, 0b111, 0);
 
             mainThread->user_stack = USER_STACK + USER_STACK_SIZE;
             mainThread->regs->rsp = mainThread->user_stack;
@@ -160,7 +160,7 @@ namespace Sched {
         current_core->pagemap = parent_process->pagemap;
         current_core->working_dir = parent_process->process_directory;
         
-        parent_process->pagemap->switchPagemap();
+        parent_process->pagemap->switch_pagemap();
 
         if (scheduled_thread->regs->cs & 0x3) {
             Cpu::swapgs();

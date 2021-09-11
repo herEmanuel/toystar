@@ -26,7 +26,7 @@ namespace Tmpfs {
 
         tmpfs();
 
-        const char* getName();
+        const char* get_name();
 
         const char* relative_to_absolute(Vfs::fs_node* node, const char* path);
 
