@@ -26,10 +26,12 @@ namespace Vfs {
 
         virtual const char* getName() { return " "; };
 
+        virtual const char* relative_to_absolute(fs_node* node, const char* path) { return " "; };
+ 
         virtual file_description* open(const char* path, uint16_t mode) { return nullptr; };  
         virtual int read(fs_node* path, size_t offset, size_t size, const char* buffer) { return -1; };
         virtual int write(fs_node* path, size_t offset, size_t size, const char* buffer) { return -1; };
-        virtual int mkdir(fs_node* parent) { return -1; };
+        virtual int mkdir(const char* path) { return -1; };
     };
 
     struct fs_node {
@@ -75,7 +77,7 @@ namespace Vfs {
     file_description* open(const char* path, uint16_t mode);  
     int read(fs_node* path, size_t offset, size_t size, const char* buffer);
     int write(fs_node* path, size_t offset, size_t size, const char* buffer);
-    int mkdir(fs_node* parent);
+    int mkdir(const char* path);
 }
 
 extern Vfs::node* vfs_root_node;

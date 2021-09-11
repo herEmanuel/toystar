@@ -21,7 +21,7 @@ namespace Acpi {
         for (size_t i = 0; i < tablesNum; i++) {
             sdt* currentTable = reinterpret_cast<sdt*>(rsdt->tables[i] + PHYSICAL_BASE_ADDRESS);
 
-            if (strcmp(currentTable->signature, signature, 4)) {
+            if (strncmp(currentTable->signature, signature, 4)) {
                 return reinterpret_cast<void*>(currentTable);
             }
         }

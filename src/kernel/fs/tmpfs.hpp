@@ -21,7 +21,6 @@ namespace Tmpfs {
     };
 
     class tmpfs : public Vfs::filesystem {
-        tmpfs_node* path_to_node(const char* path);
     public:
         const char* name;
 
@@ -29,10 +28,12 @@ namespace Tmpfs {
 
         const char* getName();
 
+        const char* relative_to_absolute(Vfs::fs_node* node, const char* path);
+
         Vfs::file_description* open(const char* path, uint16_t mode);  
         int read(Vfs::fs_node* path, size_t offset, size_t size, const char* buffer);
         int write(Vfs::fs_node* path, size_t offset, size_t size, const char* buffer);
-        int mkdir(Vfs::fs_node* parent);
+        int mkdir(const char* path);
     };
 
 }

@@ -90,30 +90,45 @@ extern "C" void _start(stivale2_struct* stivale2) {
 
     kprint("Free memory: %d KB\n", PMM::get_available_memory()/1024);
 
-    Tmpfs::init();
-    kprint("tmpfs initialized\n");
-    Vfs::mount("tmpfs", "/");
-    kprint("tmpfs mounted at /\n");
+    // Tmpfs::init();
+    // kprint("tmpfs initialized\n");
+    // Vfs::mount("tmpfs", "/");
+    // kprint("tmpfs mounted at /\n");
 
-    auto fd = Vfs::open("/teste.txt", Vfs::Modes::CREATE);
-    kprint("file opened\n");
-    int res = Vfs::write(fd->file, 0, 14, "Hello, world!");
-    kprint("wrote to the file\n");
+    // auto fd = Vfs::open("/teste.txt", Vfs::Modes::CREATE);
+    // kprint("file opened\n");
+    // int res = Vfs::write(fd->file, 0, 14, "Hello, world!");
+    // kprint("wrote to the file\n");
     
-    if (res == -1) {
-        kprint("Bruh couldnt write that shit\n");
-    }
+    // if (res == -1) {
+    //     kprint("Bruh couldnt write that shit\n");
+    // }
 
-    char buffer[14];
-    memset(buffer, 0, 14);
+    // char buffer[14];
+    // memset(buffer, 0, 14);
 
-    Vfs::read(fd->file, 0, 14, buffer);
+    // Vfs::read(fd->file, 0, 14, buffer);
 
-    kprint("buffer: %s\n", buffer);
+    // kprint("buffer: %s\n", buffer);
 
-    // Cpu::bootstrap_cores(smpInfo);
+    // Vfs::mkdir("/tests");
 
-    // Sched::init();
+    // auto otherFile = Vfs::open("/tests/hello.c", Vfs::Modes::CREATE);
+    // kprint("YES FILE ON THE NEW DIR\n");
+    // Vfs::write(otherFile->file, 0, 15, "code blablabla");
+
+    // char buffer2[15];
+    // memset(buffer2, 0, 15);
+
+    // Vfs::read(otherFile->file, 0, 15, buffer2);
+
+    // kprint("new file: %s\n", buffer2);
+
+    // kprint("node path: %s\n", otherFile->file->fs->relative_to_absolute(otherFile->file, ""));
+
+    Cpu::bootstrap_cores(smpInfo);
+
+    Sched::init();
 
     Cpu::halt();
 }

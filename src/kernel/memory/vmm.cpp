@@ -106,6 +106,7 @@ namespace VMM {
         range->prot = prot;
         range->flags = flags;
         ranges.push_back(range);
+        
         mapRangeRaw(virt, phys, length, prot);
     }
 

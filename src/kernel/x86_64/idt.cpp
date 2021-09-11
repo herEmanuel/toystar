@@ -12,6 +12,7 @@ __INTERRUPT__ void double_fault_handler(interrupt_frame* intFrame);
 __INTERRUPT__ void general_protection_handler(interrupt_frame* intFrame, uint64_t errCode);
 
 extern "C" void reschedule_handler();
+extern "C" void syscall_entry();
 
 static IDTGate idt[256];
 static IDTDescriptor idtDescriptor;
@@ -34,6 +35,7 @@ void init_idt() {
     registerInterruptHandler(0x8, (uint64_t)&double_fault_handler, 0x8E, 0);
     registerInterruptHandler(0xD, (uint64_t)&general_protection_handler, 0x8E, 0);
     registerInterruptHandler(0x20, (uint64_t)&reschedule_handler, 0x8E, 0);
+    registerInterruptHandler(0x80, (uint64_t)&syscall_entry, 0xEE, 0);
 
     idtDescriptor = {sizeof(idt), (uint64_t)&idt};
 }

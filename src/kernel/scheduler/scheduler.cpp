@@ -21,17 +21,24 @@ toys::vector<Sched::thread*> thread_list;
 Sched::process* init_process = nullptr;
 
 void init_proc() {
+    asm volatile("xor %rax, %rax");
+    asm volatile("int $0x80");
     kprint("Main process started!\n");
-    Cpu::halt();
+    while (true);
 }
 
 namespace Sched {
 
     void init() {
-        init_process = create_process((uint64_t)&init_proc, 0x8, VMM::kernel_vmm);
+        VMM::vmm* newVmm = new VMM::vmm(true);
+        newVmm->mapRangeRaw(PHYSICAL_BASE_ADDRESS, 0, 0x100000000, 0b111);
+        newVmm->mapRangeRaw(KERNEL_BASE, 0, 0x80000000, 0b111);
+        newVmm->mapRangeRaw(0, 0, 0x100000000, 0b111);
+ 
+        init_process = create_process((uint64_t)&init_proc, 0x1b, newVmm);
         queue(init_process->threads[0]);
-
-        Apic::localApic->calibrate_timer(30);
+   
+        Apic::localApic->calibrate_timer(3000);
     }
 
     process* create_process(uint64_t rip, uint64_t cs, VMM::vmm* pagemap) {
@@ -51,17 +58,16 @@ namespace Sched {
         memset(mainThread->regs, 0, sizeof(context));
 
         uint64_t stack = (uint64_t) PMM::alloc(USER_STACK_SIZE / PAGE_SIZE);
-
-        if (cs == 0x23) {
+        
+        if (cs & 0x3) {
             //userland process
             mainThread->kernel_stack = reinterpret_cast<uint64_t>(PMM::alloc(1) + PAGE_SIZE + PHYSICAL_BASE_ADDRESS);
 
             pagemap->mapRange(USER_STACK, stack, USER_STACK_SIZE, 0b111, 0);
-            
+
             mainThread->user_stack = USER_STACK + USER_STACK_SIZE;
             mainThread->regs->rsp = mainThread->user_stack;
             mainThread->regs->ss = 0x20 | 0x3; // | 0x3 sets the RPL
-
         } else {
             //kernel process
             mainThread->regs->rsp = stack + PHYSICAL_BASE_ADDRESS;
@@ -71,14 +77,13 @@ namespace Sched {
         mainThread->regs->rip = rip;
         mainThread->regs->rflags = 0x202;
         mainThread->regs->cs = cs;
-
         newProcess->threads.push_back(mainThread);
 
         Lock::acquire(&sched_lock);
         process_list.push_back(newProcess);
         Lock::release(&sched_lock);
-
-        return newProcess;
+        
+        return newProcess;  
     }
 
     void queue(thread* thread_to_queue) {
@@ -97,7 +102,7 @@ namespace Sched {
         size_t waiting_amount = 0;
         int thread_id = -1;
 
-        if (regs->cs == 0x23) {
+        if (regs->cs & 0x3) {
             Cpu::swapgs();
         }
  
@@ -123,7 +128,7 @@ namespace Sched {
             if (current_core->tid != -1) {
                 thread_id = current_core->tid;
             } else {
-                if (regs->cs == 0x23) {
+                if (regs->cs & 0x3) {
                     Cpu::swapgs();
                 }   
                 Lock::release(&sched_lock);
@@ -153,15 +158,16 @@ namespace Sched {
         current_core->kernel_stack = scheduled_thread->kernel_stack;
         current_core->user_stack = scheduled_thread->user_stack;
         current_core->pagemap = parent_process->pagemap;
-
+        current_core->working_dir = parent_process->process_directory;
+        
         parent_process->pagemap->switchPagemap();
 
-        if (scheduled_thread->regs->cs == 0x23) {
+        if (scheduled_thread->regs->cs & 0x3) {
             Cpu::swapgs();
         }
-
+        
         Apic::localApic->eoi();
-
+        
         context_switch(scheduled_thread->regs);
     }
 }

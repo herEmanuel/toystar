@@ -41,27 +41,82 @@ namespace Tmpfs {
         return name;
     }
 
+    const char* get_name_from_path(const char* path) {
+        size_t i = 0;
+        size_t lastSlash = 0;
+
+        while (path[i]) {
+            if (path[i] == '/') {
+                lastSlash = i;
+            }
+
+            i++;
+        }
+
+        return path+lastSlash+1;
+    }
+
+    // /test/test.txt
+
+    // /teste/dev/potato.png
+
+    // ../teste
+
+    //idk bruh
+    const char* node_to_path(tmpfs_node* node) {
+        
+    }
+
+    // ../../../teste
+
+    const char* tmpfs::relative_to_absolute(Vfs::fs_node* node, const char* path) {
+        tmpfs_node* tmpNode = reinterpret_cast<tmpfs_node*>(node->device_node);
+
+        while (path[0] == '.') {
+            if (path[1] == '.') {
+                if (path[2] != '/') { return ""; }
+
+                tmpNode = tmpNode->parent;
+                path += 3;
+                continue;
+            }
+
+            if (path[1] != '/') { return ""; }
+            path += 2;
+        }
+
+        return node_to_path(tmpNode);
+    }
+
     //TODO: this needs more testing
-    tmpfs_node* tmpfs::path_to_node(const char* path) {
+    //if the node in the path doesn't exist, it will return its parent (if it exists)
+    tmpfs_node* path_to_node(const char* path) {
         tmpfs_node* head = root_tmpfs_node->children;
-        tmpfs_node* parent = nullptr;
+        tmpfs_node* node = root_tmpfs_node;
 
         if (path == "/") {
             return root_tmpfs_node;
         }
 
-        while (head != nullptr) {
-            kprint("loop\n");
-            if (strcmp(head->file->name, path, strlen(head->file->name))) {
-                if (path[strlen(head->file->name)] != '/' 
-                    || head->file->type != Vfs::FileType::Directory) {
+        if (path[0] == '/') {
+            path += 1;
+        }
+
+        while (head != nullptr && path[0] != '\0') {
+            if (strncmp(head->file->name, path, strlen(head->file->name))) {
+                if (path[strlen(head->file->name)] != '/' &&
+                    path[strlen(head->file->name)] != '\0') {
                     head = head->next;
                     continue;
                 }
 
-                parent = head;
+                if (path[strlen(head->file->name)] == '\0') {
+                    return head;
+                }
+                
+                node = head;
 
-                path += strlen(head->file->name);
+                path += strlen(head->file->name)+1;
 
                 head = head->children;
                 continue;
@@ -70,44 +125,38 @@ namespace Tmpfs {
             head = head->next;
         }
 
-        kprint("loop ended\n");
-
-        size_t i = 1;
+        //this ensures that the node returned is either the parent or the node itself
+        size_t i = 0;
+        size_t count = 0;
 
         while (path[i]) {
-            if (path[i] == '/') {
-                return nullptr;
+            if (path[i] == '/' && path[i+1] != '\0') {
+                if (++count > 1) { return nullptr; }
             }
 
             i++;
         }
 
-        return parent;
+        return node;
     }
 
     Vfs::file_description* tmpfs::open(const char* path, uint16_t mode) {
         tmpfs_node* node = path_to_node(path);
 
+        if (node == nullptr) {
+            return nullptr;
+        }
+        
         if (mode & Vfs::Modes::CREATE) {
-            if (node != nullptr) {
-                return nullptr;
-            }
-
-            size_t lastSlash = 0;
-            size_t i = 0;
-
-            while (path[i]) {
-                if (path[i] == '/') {
-                    lastSlash = i;
-                }
-
-                i++;
+            if (strcmp(get_name_from_path(path), node->file->name)
+                || node->file->type != Vfs::FileType::Directory) {
+                return nullptr; 
             }
 
             tmpfs_node* new_file = new tmpfs_node;
 
             new_file->file = new Vfs::fs_node;
-            new_file->file->name = path+lastSlash+1;
+            new_file->file->name = get_name_from_path(path); 
             new_file->file->size = 4096;
             new_file->file->permissions = 0;
             new_file->file->type = 0;
@@ -119,22 +168,8 @@ namespace Tmpfs {
 
             kprint("file already in memory \n");
             kprint("new file name: %s\n", new_file->file->name);
-            kprint("lastslash: %d\n", lastSlash);
     
-            const char* parent_path;
-
-            if (!lastSlash) {
-                parent_path = "/";
-            } else {
-                char buffer[lastSlash];
-                substr(buffer, path, 0, lastSlash-1);
-                buffer[lastSlash] = '\0';
-                parent_path = buffer;
-            }
-
-            kprint("parent path: %s\n", parent_path);
-
-            tmpfs_node* parent_node = path_to_node(parent_path);
+            tmpfs_node* parent_node = node;
 
             kprint("New file parent: %s\n", parent_node->file->name);
 
@@ -150,7 +185,8 @@ namespace Tmpfs {
             return fd;
         }
  
-        if (node == nullptr) {
+        if (!strcmp(get_name_from_path(path), node->file->name)
+            || node->file->type != Vfs::FileType::File) {
             return nullptr;
         }
 
@@ -187,8 +223,32 @@ namespace Tmpfs {
     }
 
     //TODO: implement
-    int tmpfs::mkdir(Vfs::fs_node* parent) {
+    int tmpfs::mkdir(const char* path) {
+        tmpfs_node* parent = path_to_node(path);
 
+        if (parent == nullptr) {
+            return -1;
+        }
+
+        if (strcmp(get_name_from_path(path), parent->file->name)) {
+            return -1; //TODO: proper error code
+        }
+
+        tmpfs_node* dir = new tmpfs_node;
+
+        dir->file = new Vfs::fs_node;
+        dir->file->name = get_name_from_path(path);
+        dir->file->type = Vfs::FileType::Directory;
+        dir->file->device_node = (void*)dir;
+        dir->file->fs = tmp_filesystem;
+
+        dir->children = nullptr;
+
+        dir->parent = parent;
+        dir->next = parent->children;
+        parent->children = dir;
+
+        return 0;
     }
 
 }

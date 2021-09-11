@@ -5,6 +5,7 @@
 #include <stddef.h>
 #include <boot/stivale2.hpp>
 #include <memory/vmm.hpp>
+#include <fs/vfs.hpp>
 
 #define GSBase 0xC0000101
 #define KernelGSBase 0xC0000102
@@ -50,11 +51,12 @@ struct context {
 };
 
 struct cpu {
+    uint64_t user_stack;
+    uint64_t kernel_stack;
     uint8_t lapic_id;
     int tid;
     int pid;
-    uint64_t kernel_stack;
-    uint64_t user_stack;
+    Vfs::fs_node* working_dir;
     VMM::vmm* pagemap;
 };
 

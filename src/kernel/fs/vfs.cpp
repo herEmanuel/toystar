@@ -3,6 +3,7 @@
 #include <vector.hpp>
 #include <strings.hpp>
 #include <video.hpp>
+#include <x86_64/cpu.hpp>
 
 #include <stddef.h>
 #include <stdint.h>
@@ -10,7 +11,7 @@
 Vfs::node* vfs_root_node = nullptr;
 toys::vector<Vfs::filesystem*> fses;
 
-//TODO: relative paths
+//TODO: relative paths and make it safe for multiple cores
 
 namespace Vfs {
 
@@ -22,7 +23,7 @@ namespace Vfs {
         filesystem* fs = nullptr;
 
         for (size_t i = 0; i < fses.size(); i++) {
-            if (strcmp(fses[i]->getName(), source, strlen(fses[i]->getName()))) {
+            if (strncmp(fses[i]->getName(), source, strlen(fses[i]->getName()))) {
                 fs = fses[i];
                 break;
             }
@@ -49,7 +50,7 @@ namespace Vfs {
         const char* target_str = target;
 
         while (head != nullptr) {
-            if (strcmp(head->name, target_str, strlen(head->name))) {
+            if (strncmp(head->name, target_str, strlen(head->name))) {
                 if (target_str[strlen(head->name)] != '/') {
                     head = head->next;
                     continue;
@@ -100,7 +101,7 @@ namespace Vfs {
         node* parent = vfs_root_node;
 
         while (head != nullptr) {
-            if (strcmp(head->name, fs_path, strlen(head->name))) {
+            if (strncmp(head->name, fs_path, strlen(head->name))) {
                 if (fs_path[strlen(head->name)] != '/') {
                     head = head->next;
                     continue;
@@ -129,6 +130,13 @@ namespace Vfs {
     }
 
     file_description* open(const char* path, uint16_t mode) {
+        if (path[0] != '/') {
+            fs_node* working_dir =  Cpu::local_core()->working_dir;
+
+            path = working_dir->fs->relative_to_absolute(working_dir, path);
+            return working_dir->fs->open(path, mode);
+        }
+
         Vfs::path* vfs_path = get_absolute_path(path);
     
         return vfs_path->fs->open(vfs_path->fs_path, mode);
@@ -142,8 +150,10 @@ namespace Vfs {
         return path->fs->write(path, offset, size, buffer);
     }
 
-    int mkdir(fs_node* parent) {
-        return parent->fs->mkdir(parent);
+    int mkdir(const char* path) {
+        Vfs::path* vfs_path = get_absolute_path(path);
+
+        return vfs_path->fs->mkdir(vfs_path->fs_path);
     }
 
 }
