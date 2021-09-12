@@ -112,10 +112,6 @@ namespace Cpu {
         wrmsr(GSBase, gs);
         wrmsr(KernelGSBase, 0); //user gs will always be 0
     }
-
-    inline void swapgs() {
-        asm volatile("swapgs");
-    }
 }
 
 #endif

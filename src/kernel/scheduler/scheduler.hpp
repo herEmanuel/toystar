@@ -20,7 +20,6 @@ namespace Sched {
         size_t status;
         size_t waiting_time;
 
-        uint64_t kernel_stack;
         uint64_t user_stack;
 
         context* regs;
@@ -52,5 +51,9 @@ namespace Sched {
     process* create_process(uint64_t rip, uint64_t cs, VMM::vmm* pagemap);
 
 }
+
+void syscall_getpid(context* regs);
+void syscall_gettid(context* regs);
+void syscall_exit(context* regs);
 
 #endif

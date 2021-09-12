@@ -16,14 +16,12 @@ Lock::lock_t sched_lock = 0;
 toys::vector<Sched::process*> process_list;
 toys::vector<Sched::thread*> thread_list;
 
-//TODO: non-sequential pids/tids?
-
 Sched::process* init_process = nullptr;
 
 void init_proc() {
-    // asm volatile("xor %rax, %rax");
-    // asm volatile("int $0x80");
     kprint("Main process started!\n");
+    asm volatile("movq $0x2, %rax");
+    asm volatile("int $0x80");
     while (true);
 }
 
@@ -41,17 +39,38 @@ namespace Sched {
         Apic::localApic->calibrate_timer(30);
     }
 
+    size_t get_new_pid() {
+        size_t len = process_list.size();
+        for (size_t i = 0; i < len; i++) {
+            if (process_list[i] == nullptr) {
+                return i;
+            }
+        }
+
+        process_list.push_back(nullptr);
+        return len;
+    }
+
+    size_t get_new_tid() {
+        size_t len = thread_list.size();
+        for (size_t i = 0; i < len; i++) {
+            if (thread_list[i] == nullptr) {
+                return i;
+            }
+        }
+
+        thread_list.push_back(nullptr);
+        return len;
+    }
+
     process* create_process(uint64_t rip, uint64_t cs, VMM::vmm* pagemap) {
         process* newProcess = new process;
 
         newProcess->status = Status::Waiting;
-        newProcess->pid = process_list.size();
         newProcess->pagemap = pagemap;
 
         thread* mainThread = new thread;
 
-        mainThread->tid = thread_list.size(); 
-        mainThread->parent_pid = newProcess->pid;
         mainThread->status = Status::Waiting;
         mainThread->waiting_time = 0;
 
@@ -59,10 +78,9 @@ namespace Sched {
 
         uint64_t stack = (uint64_t) PMM::alloc(USER_STACK_SIZE / PAGE_SIZE);
         
+        //TODO: take a look at this
         if (cs & 0x3) {
             //userland process
-            mainThread->kernel_stack = reinterpret_cast<uint64_t>(PMM::alloc(1) + PAGE_SIZE + PHYSICAL_BASE_ADDRESS);
-
             pagemap->map_range(USER_STACK, stack, USER_STACK_SIZE, 0b111, 0);
 
             mainThread->user_stack = USER_STACK + USER_STACK_SIZE;
@@ -80,7 +98,13 @@ namespace Sched {
         newProcess->threads.push_back(mainThread);
 
         Lock::acquire(&sched_lock);
-        process_list.push_back(newProcess);
+
+        newProcess->pid = get_new_pid();
+        mainThread->tid = get_new_tid();
+        mainThread->parent_pid = newProcess->pid;
+
+        process_list[newProcess->pid] = newProcess;
+
         Lock::release(&sched_lock);
         
         return newProcess;  
@@ -88,12 +112,8 @@ namespace Sched {
 
     void queue(thread* thread_to_queue) {
         Lock::acquire(&sched_lock);
-
-        if (thread_to_queue->tid < thread_list.size()) {
-            return;
-        }
         
-        thread_list.push_back(thread_to_queue);
+        thread_list[thread_to_queue->tid] = thread_to_queue;
 
         Lock::release(&sched_lock);
     }
@@ -101,16 +121,15 @@ namespace Sched {
     extern "C" void reschedule(context* regs) {
         size_t waiting_amount = 0;
         int thread_id = -1;
-
-        if (regs->cs & 0x3) {
-            Cpu::swapgs();
-        }
  
         cpu* current_core = Cpu::local_core();
 
         Lock::acquire(&sched_lock);
         
         for (size_t i = 0; i < thread_list.size(); i++) {
+            if (thread_list[i] == nullptr) 
+                continue;
+
             if (thread_list[i]->status == Status::Running) {
                 thread_list[i]->waiting_time++;
                 continue;
@@ -128,9 +147,6 @@ namespace Sched {
             if (current_core->tid != -1) {
                 thread_id = current_core->tid;
             } else {
-                if (regs->cs & 0x3) {
-                    Cpu::swapgs();
-                }   
                 Lock::release(&sched_lock);
                 Apic::localApic->eoi();
                 return;
@@ -155,19 +171,56 @@ namespace Sched {
     
         current_core->tid = scheduled_thread->tid;
         current_core->pid = scheduled_thread->parent_pid;
-        current_core->kernel_stack = scheduled_thread->kernel_stack;
         current_core->user_stack = scheduled_thread->user_stack;
         current_core->pagemap = parent_process->pagemap;
         current_core->working_dir = parent_process->process_directory;
         
         parent_process->pagemap->switch_pagemap();
-
-        if (scheduled_thread->regs->cs & 0x3) {
-            Cpu::swapgs();
-        }
         
         Apic::localApic->eoi();
         
         context_switch(scheduled_thread->regs);
     }
+}
+
+void syscall_getpid(context* regs) {
+    cpu* current = Cpu::local_core();
+
+    regs->rax = current->pid;
+}
+
+void syscall_gettid(context* regs) {
+    cpu* current = Cpu::local_core();
+
+    regs->rax = current->tid;
+}
+
+void syscall_exit(context* regs) {
+    cpu* current_core = Cpu::local_core();
+
+    Lock::acquire(&sched_lock);
+
+    Sched::process* proc = process_list[current_core->pid];
+
+    process_list[proc->pid] = nullptr;
+
+    for (size_t i = 0; i < proc->fd_list.size(); i++) {
+        delete proc->fd_list[i];
+    }
+
+    //TODO: delete user stack and pagemap
+
+    for (size_t i = 0; i < proc->threads.size(); i++) {
+        thread_list[proc->threads[i]->tid] = nullptr;
+        delete proc->threads[i];
+    }
+
+    delete proc;
+
+    Lock::release(&sched_lock);
+
+    current_core->tid = -1;
+    current_core->pid = -1;
+
+    Cpu::halt();
 }

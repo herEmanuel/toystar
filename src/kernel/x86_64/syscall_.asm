@@ -2,12 +2,7 @@ global syscall_entry
 extern syscall_main
 
 syscall_entry:
-    swapgs 
-
-    mov [gs:0], rsp  ; save user stack
-    mov rsp, [gs:8] ; load kernel stack
-
-    sti
+    sti 
 
     push r15
     push r14
@@ -45,11 +40,5 @@ syscall_entry:
     pop r13
     pop r14
     pop r15
-
-    cli
-
-    mov rsp, [gs:0] ; restore user stack
-
-    swapgs
 
     iretq

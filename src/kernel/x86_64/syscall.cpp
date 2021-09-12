@@ -2,22 +2,20 @@
 #include <stddef.h>
 
 #include "cpu.hpp"
+#include <scheduler/scheduler.hpp>
 #include <utils.hpp>
 #include <video.hpp>
 
-void syscall_test(context* regs) {
-    kprint("syscall test!!!!\n");
-}
+typedef void (*syscall)(context* regs);
+
+syscall syscall_list[] = {
+    &syscall_getpid, &syscall_gettid, &syscall_exit
+};
 
 extern "C" void syscall_main(context* regs) {
-    kprint("Syscall main\n");
-
-    switch (regs->rax) {
-        case 0:
-            syscall_test(regs);
-            break;
-
-        default:
-            Toystar::utils::panic("invalid syscall");
+    if (regs->rax >= sizeof(syscall_list)/sizeof(syscall)) {
+        Toystar::utils::panic("invalid syscall"); //TODO: treat it properly
     }
+
+    syscall_list[regs->rax](regs);
 }
