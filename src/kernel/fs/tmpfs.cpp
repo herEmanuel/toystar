@@ -24,13 +24,8 @@ namespace Tmpfs {
     tmpfs::tmpfs() {
         root_tmpfs_node = new tmpfs_node;
 
-        root_tmpfs_node->file = new Vfs::fs_node; 
-        root_tmpfs_node->file->name = "/";
-        root_tmpfs_node->file->size = 0;
-        root_tmpfs_node->file->permissions = 0;
-        root_tmpfs_node->file->type = Vfs::FileType::Directory;
-        root_tmpfs_node->file->device_node = (void*)root_tmpfs_node;
-        root_tmpfs_node->file->fs = tmp_filesystem;
+        root_tmpfs_node->file = Vfs::new_fs_node("/", 0, 0, Vfs::FileType::Directory, 
+                                                (void*)root_tmpfs_node, tmp_filesystem);
         
         root_tmpfs_node->children = nullptr;
         root_tmpfs_node->next = nullptr;
@@ -43,7 +38,7 @@ namespace Tmpfs {
 
     const char* get_name_from_path(const char* path) {
         size_t i = 0;
-        size_t lastSlash = 0;
+        int lastSlash = -1;
 
         while (path[i]) {
             if (path[i] == '/') {
@@ -56,49 +51,46 @@ namespace Tmpfs {
         return path+lastSlash+1;
     }
 
-    // /test/test.txt
-
-    // /teste/dev/potato.png
-
-    // ../teste
-
-    //idk bruh
-    const char* node_to_path(tmpfs_node* node) {
-        
-    }
-
-    // ../../../teste
-
-    const char* tmpfs::relative_to_absolute(Vfs::fs_node* node, const char* path) {
-        tmpfs_node* tmpNode = reinterpret_cast<tmpfs_node*>(node->device_node);
-
-        while (path[0] == '.') {
-            if (path[1] == '.') {
-                if (path[2] != '/') { return ""; }
-
-                tmpNode = tmpNode->parent;
-                path += 3;
-                continue;
-            }
-
-            if (path[1] != '/') { return ""; }
-            path += 2;
-        }
-
-        return node_to_path(tmpNode);
-    }
-
     //TODO: this needs more testing
     //if the node in the path doesn't exist, it will return its parent (if it exists)
-    tmpfs_node* path_to_node(const char* path) {
+    tmpfs_node* path_to_node(const char* path, tmpfs_node* curr_dir) {
         tmpfs_node* head = root_tmpfs_node->children;
-        tmpfs_node* node = root_tmpfs_node;
+        tmpfs_node* node = (path[0] != '/') ? curr_dir : root_tmpfs_node;
 
         if (path == "/") {
             return root_tmpfs_node;
         }
 
-        if (path[0] == '/') {
+        //parse relative paths
+        if (path[0] != '/') {
+            if (curr_dir == nullptr) {
+                return nullptr;
+            }
+            
+            while (path[0] == '.' && node != nullptr) {
+                if (path[1] == '.') {
+                    if (path[2] != '/') {
+                        return nullptr;
+                    }
+
+                    node = node->parent;
+                    path += 3;
+                    continue;
+                }
+
+                if (path[1] != '/') {
+                    return nullptr;
+                }
+                
+                path += 2;
+            }
+
+            if (node == nullptr) {
+                return nullptr;
+            }
+
+            head = node->children;
+        } else {
             path += 1;
         }
 
@@ -140,8 +132,9 @@ namespace Tmpfs {
         return node;
     }
 
-    Vfs::file_description* tmpfs::open(const char* path, uint16_t mode) {
-        tmpfs_node* node = path_to_node(path);
+    Vfs::file_description* tmpfs::open(Vfs::fs_node* working_dir, const char* path, uint16_t mode) {        
+        tmpfs_node* wdir = (working_dir != nullptr) ? (tmpfs_node*) working_dir->device_node : nullptr;
+        tmpfs_node* node = path_to_node(path, wdir);
 
         if (node == nullptr) {
             return nullptr;
@@ -155,23 +148,13 @@ namespace Tmpfs {
 
             tmpfs_node* new_file = new tmpfs_node;
 
-            new_file->file = new Vfs::fs_node;
-            new_file->file->name = get_name_from_path(path); 
-            new_file->file->size = 4096;
-            new_file->file->permissions = 0;
-            new_file->file->type = 0;
-            new_file->file->device_node = (void*)new_file;
-            new_file->file->fs = tmp_filesystem;
+            new_file->file = Vfs::new_fs_node(get_name_from_path(path), 4096, 0, Vfs::FileType::File, 
+                                                (void*)new_file, tmp_filesystem);
 
             new_file->data = reinterpret_cast<uint8_t*>(PMM::alloc(1));
             new_file->children = nullptr;
 
-            kprint("file already in memory \n");
-            kprint("new file name: %s\n", new_file->file->name);
-    
             tmpfs_node* parent_node = node;
-
-            kprint("New file parent: %s\n", parent_node->file->name);
 
             new_file->parent = parent_node;
             new_file->next = parent_node->children;
@@ -222,9 +205,9 @@ namespace Tmpfs {
         return 0;
     }
 
-    //TODO: implement
-    int tmpfs::mkdir(const char* path) {
-        tmpfs_node* parent = path_to_node(path);
+    int tmpfs::mkdir(Vfs::fs_node* working_dir, const char* path) {
+        tmpfs_node* wdir = (working_dir != nullptr) ? (tmpfs_node*) working_dir->device_node : nullptr;
+        tmpfs_node* parent = path_to_node(path, wdir);
 
         if (parent == nullptr) {
             return -1;
@@ -236,19 +219,14 @@ namespace Tmpfs {
 
         tmpfs_node* dir = new tmpfs_node;
 
-        dir->file = new Vfs::fs_node;
-        dir->file->name = get_name_from_path(path);
-        dir->file->type = Vfs::FileType::Directory;
-        dir->file->device_node = (void*)dir;
-        dir->file->fs = tmp_filesystem;
+        dir->file = Vfs::new_fs_node(get_name_from_path(path), 0, 0, 
+                                        Vfs::FileType::Directory, (void*)dir, tmp_filesystem);
 
         dir->children = nullptr;
-
         dir->parent = parent;
         dir->next = parent->children;
         parent->children = dir;
-
+        
         return 0;
     }
-
 }

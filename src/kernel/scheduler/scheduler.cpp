@@ -10,6 +10,8 @@
 #include <memory/pmm.hpp>
 #include <memory/heap.hpp>
 #include <memory.hpp>
+#include <fs/vfs.hpp>
+#include <fs/tmpfs.hpp>
 
 Lock::lock_t sched_lock = 0;
 
@@ -19,21 +21,29 @@ toys::vector<Sched::thread*> thread_list;
 Sched::process* init_process = nullptr;
 
 void init_proc() {
-    kprint("Main process started!\n");
-    asm volatile("movq $0x2, %rax");
-    asm volatile("int $0x80");
-    while (true);
+    kprint("Main process started\n");
+    auto fd = Vfs::open("/tests/hello.c", 0);
+    if (fd == nullptr) {
+        kprint("wat\n");
+    }
+    Cpu::local_core()->working_dir = ((Tmpfs::tmpfs_node*)fd->file->device_node)->parent->file;
+    kprint("yes got here\n");
+    auto otherFd = Vfs::open("hello.c", 0);
+    if (otherFd == nullptr) {
+        kprint("bruh why\n");
+    }
+    kprint("fuck\n");       
+    char buffer[100];
+    Vfs::read(otherFd->file, 0, 100, buffer);
+    kprint("result: %s\n", buffer);
+
+    Cpu::halt();
 }
 
 namespace Sched {
 
     void init() {
-        VMM::vmm* newVmm = new VMM::vmm(true);
-        newVmm->map_range_raw(PHYSICAL_BASE_ADDRESS, 0, 0x100000000, 0b111);
-        newVmm->map_range_raw(KERNEL_BASE, 0, 0x80000000, 0b111);
-        newVmm->map_range_raw(0, 0, 0x100000000, 0b111);
- 
-        init_process = create_process((uint64_t)&init_proc, 0x1b, newVmm);
+        init_process = create_process((uint64_t)&init_proc, 0x8, VMM::kernel_vmm);
         queue(init_process->threads[0]);
    
         Apic::localApic->calibrate_timer(30);

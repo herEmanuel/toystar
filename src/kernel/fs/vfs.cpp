@@ -4,6 +4,7 @@
 #include <strings.hpp>
 #include <video.hpp>
 #include <x86_64/cpu.hpp>
+#include <lock.hpp>
 
 #include <stddef.h>
 #include <stdint.h>
@@ -11,25 +12,33 @@
 Vfs::node* vfs_root_node = nullptr;
 toys::vector<Vfs::filesystem*> fses;
 
+Lock::lock_t vfs_lock = 0;
+
 //TODO: relative paths and make it safe for multiple cores
 
 namespace Vfs {
 
     void add_fs(filesystem* fs) {
+        Lock::acquire(&vfs_lock);
         fses.push_back(fs);
+        Lock::release(&vfs_lock);
     }
 
+    //TODO: check for multiple mounts to the same target
     bool mount(const char* source, const char* target) {
         filesystem* fs = nullptr;
 
+        Lock::acquire(&vfs_lock);
+
         for (size_t i = 0; i < fses.size(); i++) {
-            if (strncmp(fses[i]->get_name(), source, strlen(fses[i]->get_name()))) {
+            if (strcmp(fses[i]->get_name(), source)) {
                 fs = fses[i];
                 break;
             }
         }
 
         if (fs == nullptr) {
+            Lock::release(&vfs_lock);
             return false;
         }
 
@@ -42,16 +51,20 @@ namespace Vfs {
             mount_node->next = nullptr;
             vfs_root_node = mount_node;
 
+            Lock::release(&vfs_lock);
+
             return true;
         } 
 
         node* head = vfs_root_node->children;
         node* parent = vfs_root_node;
         const char* target_str = target;
-
-        while (head != nullptr) {
+        
+        while (head != nullptr && target_str[0] != '\0') {
             if (strncmp(head->name, target_str, strlen(head->name))) {
-                if (target_str[strlen(head->name)] != '/') {
+
+                if (target_str[strlen(head->name)] != '/'
+                    && target_str[strlen(head->name)] != '\0') {
                     head = head->next;
                     continue;
                 }
@@ -74,6 +87,8 @@ namespace Vfs {
         mount_node->children = nullptr;
         mount_node->next = parent->children;
         parent->children = mount_node;
+
+        Lock::release(&vfs_lock);
         
         return true;
     }
@@ -129,17 +144,27 @@ namespace Vfs {
         return _path;
     }
 
+    fs_node* new_fs_node(const char* name, size_t size, uint8_t permi, uint8_t type, void* dn, filesystem* fs) {
+        fs_node* node = new fs_node;
+        node->name = name;
+        node->size = size;
+        node->permissions = permi;
+        node->type = type;
+        node->device_node = dn;
+        node->fs = fs;
+        return node;
+    }
+
     file_description* open(const char* path, uint16_t mode) {
         if (path[0] != '/') {
-            fs_node* working_dir =  Cpu::local_core()->working_dir;
+            fs_node* working_dir = Cpu::local_core()->working_dir;
 
-            path = working_dir->fs->relative_to_absolute(working_dir, path);
-            return working_dir->fs->open(path, mode);
+            return working_dir->fs->open(working_dir, path, mode);
         }
 
         Vfs::path* vfs_path = get_absolute_path(path);
     
-        return vfs_path->fs->open(vfs_path->fs_path, mode);
+        return vfs_path->fs->open(nullptr, vfs_path->fs_path, mode);
     }
 
     int read(fs_node* path, size_t offset, size_t size, const char* buffer) {
@@ -151,9 +176,15 @@ namespace Vfs {
     }
 
     int mkdir(const char* path) {
+        if (path[0] != '/') {
+            fs_node* working_dir = Cpu::local_core()->working_dir;
+
+            return working_dir->fs->mkdir(working_dir, path);
+        }
+
         Vfs::path* vfs_path = get_absolute_path(path);
 
-        return vfs_path->fs->mkdir(vfs_path->fs_path);
+        return vfs_path->fs->mkdir(nullptr, vfs_path->fs_path);
     }
 
 }

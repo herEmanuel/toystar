@@ -28,12 +28,10 @@ namespace Tmpfs {
 
         const char* get_name();
 
-        const char* relative_to_absolute(Vfs::fs_node* node, const char* path);
-
-        Vfs::file_description* open(const char* path, uint16_t mode);  
+        Vfs::file_description* open(Vfs::fs_node* working_dir, const char* path, uint16_t mode);  
         int read(Vfs::fs_node* path, size_t offset, size_t size, const char* buffer);
         int write(Vfs::fs_node* path, size_t offset, size_t size, const char* buffer);
-        int mkdir(const char* path);
+        int mkdir(Vfs::fs_node* working_dir, const char* path);
     };
 
 }

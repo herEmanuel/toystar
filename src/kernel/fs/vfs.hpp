@@ -26,12 +26,10 @@ namespace Vfs {
 
         virtual const char* get_name() { return " "; };
 
-        virtual const char* relative_to_absolute(fs_node* node, const char* path) { return " "; };
- 
-        virtual file_description* open(const char* path, uint16_t mode) { return nullptr; };  
+        virtual file_description* open(fs_node* working_dir, const char* path, uint16_t mode) { return nullptr; };  
         virtual int read(fs_node* path, size_t offset, size_t size, const char* buffer) { return -1; };
         virtual int write(fs_node* path, size_t offset, size_t size, const char* buffer) { return -1; };
-        virtual int mkdir(const char* path) { return -1; };
+        virtual int mkdir(fs_node* working_dir, const char* path) { return -1; };
     };
 
     struct fs_node {
@@ -42,6 +40,8 @@ namespace Vfs {
         uint8_t permissions; //permissions (read only, etc)
 
         uint8_t type; //directory, symlink, etc
+
+        fs_node* link; // used for symlinks
 
         void* device_node; //pointer to a wrapper for this node
         filesystem* fs;
@@ -78,6 +78,8 @@ namespace Vfs {
     int read(fs_node* path, size_t offset, size_t size, const char* buffer);
     int write(fs_node* path, size_t offset, size_t size, const char* buffer);
     int mkdir(const char* path);
+
+    fs_node* new_fs_node(const char* name, size_t size, uint8_t permi, uint8_t type, void* dn, filesystem* fs);
 }
 
 extern Vfs::node* vfs_root_node;
