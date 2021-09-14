@@ -171,7 +171,7 @@ namespace Vfs {
         return path->fs->read(path, offset, size, buffer);
     }
 
-    int write(fs_node* path, size_t offset, size_t size, const char* buffer) {
+    int write(fs_node* path, size_t offset, size_t size, char* buffer) {
         return path->fs->write(path, offset, size, buffer);
     }
 

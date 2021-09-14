@@ -120,6 +120,19 @@ namespace Sched {
         return newProcess;  
     }
 
+    process* get_proces(size_t pid) {
+        Lock::acquire(&sched_lock);
+
+        if (pid >= process_list.size()) {
+            return nullptr;
+        }
+
+        process* proc = process_list[pid];
+
+        Lock::release(&sched_lock);
+        return proc;
+    }
+
     void queue(thread* thread_to_queue) {
         Lock::acquire(&sched_lock);
         
@@ -137,19 +150,14 @@ namespace Sched {
         Lock::acquire(&sched_lock);
         
         for (size_t i = 0; i < thread_list.size(); i++) {
-            if (thread_list[i] == nullptr) 
+            if (thread_list[i] == nullptr || thread_list[i]->status == Status::Running) 
                 continue;
 
-            if (thread_list[i]->status == Status::Running) {
-                thread_list[i]->waiting_time++;
-                continue;
-            }
+            thread_list[i]->waiting_time++;
             
             if (thread_list[i]->waiting_time >= waiting_amount) {
                 waiting_amount = thread_list[i]->waiting_time;
                 thread_id = thread_list[i]->tid;
-
-                thread_list[i]->waiting_time++;
             }
         }
     
@@ -170,17 +178,30 @@ namespace Sched {
 
             previous_thread->status = Status::Waiting;
             previous_thread->regs = regs;
+
+            process* previous_process = process_list[current_core->pid];
+            previous_process->status = Status::Waiting;
+
+            for (size_t i = 0; i < previous_process->threads.size(); i++) {
+                if (previous_process->threads[i] != nullptr 
+                    && previous_process->threads[i]->status == Status::Running) 
+                    {
+                        previous_process->status = Status::Running;
+                    }
+            }
+
         }
 
         process* parent_process = process_list[scheduled_thread->parent_pid];
-        //TODO: process status
+        parent_process->status = Status::Running;
 
         scheduled_thread->status = Status::Running;
+        scheduled_thread->waiting_time = 0;
 
         Lock::release(&sched_lock);
     
         current_core->tid = scheduled_thread->tid;
-        current_core->pid = scheduled_thread->parent_pid;
+        current_core->pid = parent_process->pid;
         current_core->user_stack = scheduled_thread->user_stack;
         current_core->pagemap = parent_process->pagemap;
         current_core->working_dir = parent_process->process_directory;

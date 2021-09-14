@@ -2,12 +2,14 @@
 #include "vfs.hpp"
 #include <memory/heap.hpp>
 #include <memory/pmm.hpp>
+#include <memory/vmm.hpp>
 #include <video.hpp>
 
 #include <stdint.h>
 #include <stddef.h>
 #include <strings.hpp>
 #include <memory.hpp>
+#include <math.hpp>
 
 Tmpfs::tmpfs* tmp_filesystem = nullptr;
 
@@ -181,6 +183,27 @@ namespace Tmpfs {
         return fd;
     } 
 
+    bool tmpfs::resize(tmpfs_node* node, size_t new_size, bool grow) {
+        size_t pages = DIV_CEIL(new_size, PAGE_SIZE);
+
+        //TODO: use non-sequential pages
+        void* new_data = PMM::alloc(pages);
+
+        if (new_data == nullptr) {
+            return false;
+        }
+
+        size_t size = (grow) ? node->file->size : pages * PAGE_SIZE;
+
+        memcpy(new_data, (void*)node->data, size);
+
+        PMM::free((void*)node->data, DIV_CEIL(node->file->size, PAGE_SIZE));
+
+        node->data = (uint8_t*) new_data;
+
+        return true;
+    }
+
     int tmpfs::read(Vfs::fs_node* path, size_t offset, size_t size, const char* buffer) {
         tmpfs_node* node = reinterpret_cast<tmpfs_node*>(path->device_node);
 
@@ -193,7 +216,7 @@ namespace Tmpfs {
         return 0;
     }
 
-    int tmpfs::write(Vfs::fs_node* path, size_t offset, size_t size, const char* buffer) {
+    int tmpfs::write(Vfs::fs_node* path, size_t offset, size_t size, char* buffer) {
         tmpfs_node* node = reinterpret_cast<tmpfs_node*>(path->device_node);
 
         if (offset + size > node->file->size) {

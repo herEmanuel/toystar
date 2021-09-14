@@ -49,6 +49,7 @@ namespace Sched {
     void init();
     void queue(thread* thread_to_queue);
     process* create_process(uint64_t rip, uint64_t cs, VMM::vmm* pagemap);
+    process* get_proces(size_t pid);
 
 }
 

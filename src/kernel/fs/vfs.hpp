@@ -28,7 +28,7 @@ namespace Vfs {
 
         virtual file_description* open(fs_node* working_dir, const char* path, uint16_t mode) { return nullptr; };  
         virtual int read(fs_node* path, size_t offset, size_t size, const char* buffer) { return -1; };
-        virtual int write(fs_node* path, size_t offset, size_t size, const char* buffer) { return -1; };
+        virtual int write(fs_node* path, size_t offset, size_t size, char* buffer) { return -1; };
         virtual int mkdir(fs_node* working_dir, const char* path) { return -1; };
     };
 
@@ -76,7 +76,7 @@ namespace Vfs {
 
     file_description* open(const char* path, uint16_t mode);  
     int read(fs_node* path, size_t offset, size_t size, const char* buffer);
-    int write(fs_node* path, size_t offset, size_t size, const char* buffer);
+    int write(fs_node* path, size_t offset, size_t size, char* buffer);
     int mkdir(const char* path);
 
     fs_node* new_fs_node(const char* name, size_t size, uint8_t permi, uint8_t type, void* dn, filesystem* fs);
