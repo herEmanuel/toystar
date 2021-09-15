@@ -60,13 +60,26 @@ size_t atoi(const char* str) {
     }
 
     while (str[i]) {
-        num += str[i] - '0';
         num *= 10;
+        num += str[i] - '0';
         i++;
     }
 
     if (negative) {
         num *= -1;
+    }
+
+    return num;
+}
+
+size_t octal_to_int(const char* str) {
+    size_t num = 0;
+    size_t i = 0;
+
+    while (str[i]) {
+        num *= 8;
+        num += str[i] - '0';
+        i++;
     }
 
     return num;

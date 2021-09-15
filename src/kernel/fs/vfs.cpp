@@ -163,7 +163,7 @@ namespace Vfs {
         }
 
         Vfs::path* vfs_path = get_absolute_path(path);
-    
+        
         return vfs_path->fs->open(nullptr, vfs_path->fs_path, mode);
     }
 

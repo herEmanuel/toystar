@@ -14,6 +14,7 @@
 #include "scheduler/scheduler.hpp"
 #include <fs/vfs.hpp>
 #include <fs/tmpfs.hpp>
+#include <fs/inittmpfs.hpp>
 
 #include <stdint.h>
 #include <stddef.h>
@@ -53,6 +54,9 @@ extern "C" void _start(stivale2_struct* stivale2) {
     stivale2_struct_tag_smp* smp_info;
     smp_info = (stivale2_struct_tag_smp*)get_tag(stivale2, STIVALE2_STRUCT_TAG_SMP_ID);
 
+    stivale2_struct_tag_modules* modules_info;
+    modules_info = (stivale2_struct_tag_modules*)get_tag(stivale2, STIVALE2_STRUCT_TAG_MODULES_ID);
+
     video_init(fb_info);
     
     log("Kernel loaded\n");
@@ -90,44 +94,20 @@ extern "C" void _start(stivale2_struct* stivale2) {
     log("Free memory: %d KB\n", PMM::get_available_memory()/1024);
 
     Tmpfs::init();
-    kprint("tmpfs initialized\n");
+
     Vfs::mount("tmpfs", "/");
-    kprint("tmpfs mounted at /\n");
-
-    auto fd = Vfs::open("/teste.txt", Vfs::Modes::CREATE);
-    kprint("file opened\n");
-    int res = Vfs::write(fd->file, 0, 14, "Hello, world!");
-    kprint("wrote to the file\n");
     
-    if (res == -1) {
-        kprint("Bruh couldnt write that shit\n");
-    }
+    log("Mounted tmpfs at /\n");
+    
+    Tmpfs::load(modules_info);
 
-    char buffer[14];
-    memset(buffer, 0, 14);
+    log("Initrd loaded\n");
 
-    Vfs::read(fd->file, 0, 14, buffer);
+    // Cpu::bootstrap_cores(smp_info);
 
-    kprint("buffer: %s\n", buffer);
+    // log("Initializing scheduler\n");
 
-    Vfs::mkdir("/tests");
-
-    auto otherFile = Vfs::open("/tests/hello.c", Vfs::Modes::CREATE);
-    kprint("YES FILE ON THE NEW DIR\n");
-    Vfs::write(otherFile->file, 0, 15, "code blablabla");
-
-    char buffer2[15];
-    memset(buffer2, 0, 15);
-
-    Vfs::read(otherFile->file, 0, 15, buffer2);
-
-    kprint("new file: %s\n", buffer2);
-
-    Cpu::bootstrap_cores(smp_info);
-
-    log("Initializing scheduler\n");
-
-    Sched::init();
+    // Sched::init();
 
     Cpu::halt();
 }

@@ -19,11 +19,11 @@ namespace Tmpfs {
 
     void init() {
         tmp_filesystem = new tmpfs();
-        tmp_filesystem->name = "tmpfs";
         Vfs::add_fs(tmp_filesystem);
     }
 
     tmpfs::tmpfs() {
+        name = "tmpfs";
         root_tmpfs_node = new tmpfs_node;
 
         root_tmpfs_node->file = Vfs::new_fs_node("/", 0, 0, Vfs::FileType::Directory, 
@@ -38,12 +38,13 @@ namespace Tmpfs {
         return name;
     }
 
+    //TODO: PLEASE NO / AT THE END
     const char* get_name_from_path(const char* path) {
         size_t i = 0;
         int lastSlash = -1;
 
         while (path[i]) {
-            if (path[i] == '/') {
+            if (path[i] == '/' && path[i+1] != '\0') {
                 lastSlash = i;
             }
 
@@ -137,11 +138,11 @@ namespace Tmpfs {
     Vfs::file_description* tmpfs::open(Vfs::fs_node* working_dir, const char* path, uint16_t mode) {        
         tmpfs_node* wdir = (working_dir != nullptr) ? (tmpfs_node*) working_dir->device_node : nullptr;
         tmpfs_node* node = path_to_node(path, wdir);
-
+        
         if (node == nullptr) {
             return nullptr;
         }
-        
+  
         if (mode & Vfs::Modes::CREATE) {
             if (strcmp(get_name_from_path(path), node->file->name)
                 || node->file->type != Vfs::FileType::Directory) {
@@ -149,7 +150,7 @@ namespace Tmpfs {
             }
 
             tmpfs_node* new_file = new tmpfs_node;
-
+            
             new_file->file = Vfs::new_fs_node(get_name_from_path(path), 4096, 0, Vfs::FileType::File, 
                                                 (void*)new_file, tmp_filesystem);
 
@@ -161,7 +162,7 @@ namespace Tmpfs {
             new_file->parent = parent_node;
             new_file->next = parent_node->children;
             parent_node->children = new_file;
-
+            
             Vfs::file_description* fd = new Vfs::file_description;
             fd->file = new_file->file;
             fd->mode = mode;
@@ -239,7 +240,7 @@ namespace Tmpfs {
         if (strcmp(get_name_from_path(path), parent->file->name)) {
             return -1; //TODO: proper error code
         }
-
+        
         tmpfs_node* dir = new tmpfs_node;
 
         dir->file = Vfs::new_fs_node(get_name_from_path(path), 0, 0, 

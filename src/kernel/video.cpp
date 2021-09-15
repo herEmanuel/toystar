@@ -2,8 +2,9 @@
 #include "font.hpp"
 #include <strings.hpp>
 #include <memory.hpp>
-#include <stdint.h>
 #include <boot/stivale2.hpp>
+
+#include <stdint.h>
 
 static uint32_t* frameBuffer;
 static uint16_t pitch;
@@ -15,15 +16,16 @@ static uint16_t cursor_y;
 
 void increment_cursor_x(uint16_t amount) {
     cursor_x += amount;
+    
     if (cursor_x >= screen_width) {
         cursor_x = 0;
         cursor_y += 18;
-
-        if (cursor_y >= screen_height) {
-            clear_screen(0x0);
-        }
-
     }
+
+    if (cursor_y >= screen_height) {
+        clear_screen(0x8075FF);
+    }
+
 }
 
 void put_pixel(uint16_t x, uint16_t y, uint32_t color) {

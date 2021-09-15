@@ -3,6 +3,7 @@ ISO_IMAGE = disk.iso
 .PHONY: clean all run
 
 OS = toystar.elf
+INIT_MODULE = init.tar
 
 all: $(ISO_IMAGE)
 
@@ -25,7 +26,7 @@ src/$(OS):
 $(ISO_IMAGE): limine src/$(OS)
 	rm -rf iso_root
 	mkdir -p iso_root
-	cp src/$(OS) \
+	cp src/$(OS) $(INIT_MODULE) \
 		limine.cfg limine/limine.sys limine/limine-cd.bin limine/limine-eltorito-efi.bin iso_root/
 	xorriso -as mkisofs -b limine-cd.bin \
 		-no-emul-boot -boot-load-size 4 -boot-info-table \

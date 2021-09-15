@@ -38,4 +38,6 @@ namespace Tmpfs {
 
 }
 
+extern Tmpfs::tmpfs* tmp_filesystem;
+
 #endif

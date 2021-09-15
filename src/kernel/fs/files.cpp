@@ -49,7 +49,7 @@ void syscall_read(context* regs) {
         return;
     }
 
-    regs->rax = Vfs::read(fd, fd->offset, regs->rdx, (const char*)regs->rsi);
+    regs->rax = Vfs::read(fd->file, fd->offset, regs->rdx, (const char*)regs->rsi);
 }
 
 void syscall_write(context* regs) {
@@ -74,7 +74,7 @@ void syscall_write(context* regs) {
         return;
     }
 
-    regs->rax = Vfs::write(fd, fd->offset, regs->rdx, (char*)regs->rsi);
+    regs->rax = Vfs::write(fd->file, fd->offset, regs->rdx, (char*)regs->rsi);
 }
 
 void syscall_close(context* regs) {
