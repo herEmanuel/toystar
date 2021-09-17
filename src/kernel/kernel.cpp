@@ -20,8 +20,8 @@
 #include <stddef.h>
 #include <strings.hpp>
 #include <memory.hpp>
-#include <vector.hpp>
-#include <map.hpp>
+#include <optional.hpp>
+#include <queue.hpp>
 
 void* get_tag(stivale2_struct* first_tag, uint64_t tag_id) {
     stivale2_tag *current_tag = (stivale2_tag*)first_tag->tags;

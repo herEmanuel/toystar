@@ -4,6 +4,7 @@
 #include <memory/heap.hpp>
 #include <utils.hpp>
 #include <memory.hpp>
+#include "optional.hpp"
 
 #include <stdint.h>
 #include <stddef.h>
@@ -127,25 +128,25 @@ namespace toys {
             return false;
         }
 
-        T* find(Key key) {
+        optional<T> find(Key key) {
             size_t index = hash(key);
             
             if (m_data[index] == nullptr) {
-                return nullptr;
+                return nullopt;
             }
             
             map_entry<Key, T>* head = m_data[index];
             while (head != nullptr) {
                 if (head->key == key) {
-                    return &head->value;
+                    return head->value;
                 }
                 head = head->next;
             }
           
-            return nullptr;
+            return nullopt;
         }
 
-        T* operator[](Key key) {
+        optional<T> operator[](Key key) {
             return find(key);
         }
 

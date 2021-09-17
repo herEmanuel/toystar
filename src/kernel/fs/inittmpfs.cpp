@@ -13,6 +13,7 @@
 
 namespace Tmpfs {
 
+    //TODO: test and free mem used by the module
     void load(stivale2_struct_tag_modules* module_info) {
         if (module_info->module_count == 0) {
             Toystar::utils::panic("no modules were loaded");
