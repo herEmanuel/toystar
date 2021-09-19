@@ -103,11 +103,11 @@ extern "C" void _start(stivale2_struct* stivale2) {
 
     log("Initrd loaded\n");
 
-    // Cpu::bootstrap_cores(smp_info);
+    Cpu::bootstrap_cores(smp_info);
 
-    // log("Initializing scheduler\n");
+    log("Initializing scheduler\n");
 
-    // Sched::init();
+    Sched::init();
 
     Cpu::halt();
 }

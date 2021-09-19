@@ -217,11 +217,14 @@ namespace Tmpfs {
         return 0;
     }
 
+    //TODO: deleting contents of the file?
     int tmpfs::write(Vfs::fs_node* path, size_t offset, size_t size, char* buffer) {
         tmpfs_node* node = reinterpret_cast<tmpfs_node*>(path->device_node);
 
         if (offset + size > node->file->size) {
-            return -1;
+            if (!resize(node, offset + size, true)) {
+                return -1;
+            }
         }
 
         memcpy((void*)(node->data+offset), (void*)buffer, size);

@@ -12,6 +12,7 @@
 #include <memory.hpp>
 #include <fs/vfs.hpp>
 #include <fs/tmpfs.hpp>
+#include <loader/elf.hpp>
 
 Lock::lock_t sched_lock = 0;
 
@@ -22,30 +23,33 @@ Sched::process* init_process = nullptr;
 
 void init_proc() {
     kprint("Main process started\n");
-    auto fd = Vfs::open("/tests/hello.c", 0);
-    if (fd == nullptr) {
-        kprint("wat\n");
-    }
-    Cpu::local_core()->working_dir = ((Tmpfs::tmpfs_node*)fd->file->device_node)->parent->file;
-    kprint("yes got here\n");
-    auto otherFd = Vfs::open("hello.c", 0);
-    if (otherFd == nullptr) {
-        kprint("bruh why\n");
-    }
-    kprint("fuck\n");       
-    char buffer[100];
-    Vfs::read(otherFd->file, 0, 100, buffer);
-    kprint("result: %s\n", buffer);
-
+    
     Cpu::halt();
 }
 
 namespace Sched {
 
     void init() {
-        init_process = create_process((uint64_t)&init_proc, 0x8, VMM::kernel_vmm);
-        queue(init_process->threads[0]);
+        // init_process = create_process((uint64_t)&init_proc, 0x8, VMM::kernel_vmm);
+        // queue(init_process->threads[0]);
    
+        auto fd = Vfs::open("/hello.elf", 0);
+        if (fd == nullptr) {
+            kprint("could not open the elf :(\n");
+        }
+
+        VMM::vmm* pagemap = new VMM::vmm(true);
+
+        pagemap->map_range_raw(PHYSICAL_BASE_ADDRESS, 0, 0x100000000, 0b11);
+        pagemap->map_range_raw(KERNEL_BASE, 0, 0x80000000, 0b11);
+        pagemap->map_range_raw(0, 0, 0x100000000, 0b111); //TODO: hahahaha
+        
+        int64_t entry_point = Loader::Elf::load(pagemap, fd->file);
+            
+        Sched::process* elf_loaded = Sched::create_process(entry_point, 0x1b, pagemap);
+        
+        Sched::queue(elf_loaded->threads[0]);
+
         Apic::localApic->calibrate_timer(30);
     }
 
@@ -83,6 +87,7 @@ namespace Sched {
 
         mainThread->status = Status::Waiting;
         mainThread->waiting_time = 0;
+        mainThread->regs = new context;
 
         memset(mainThread->regs, 0, sizeof(context));
 
@@ -95,6 +100,7 @@ namespace Sched {
 
             mainThread->user_stack = USER_STACK + USER_STACK_SIZE;
             mainThread->regs->rsp = mainThread->user_stack;
+            kprint("rsp: %x\n", mainThread->regs->rsp);
             mainThread->regs->ss = 0x20 | 0x3; // | 0x3 sets the RPL
         } else {
             //kernel process

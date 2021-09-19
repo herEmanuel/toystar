@@ -9,7 +9,7 @@
 #include <memory/vmm.hpp>
 #include <fs/vfs.hpp>
 
-#define USER_STACK 0x000000000100000
+#define USER_STACK 0x000000800000000
 #define USER_STACK_SIZE PAGE_SIZE * 8
 
 namespace Sched {

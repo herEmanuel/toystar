@@ -127,11 +127,11 @@ namespace VMM {
 
 }
 
-extern "C" void isr_page_fault(interrupt_frame* frame, uint64_t errCode) {
+extern "C" void isr_page_fault(interrupt_frame* iframe) {
     kprint("Page fault!");
 
     kprint("Error code: ");
-    kprint(errCode);
+    kprint(iframe->error_code);
 
     while(true)
         asm("hlt");

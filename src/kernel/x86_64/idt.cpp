@@ -12,7 +12,7 @@ extern "C" {
     void isr_div_by_zero(interrupt_frame* iframe);
     void isr_breakpoint(interrupt_frame* iframe);
     void isr_double_fault(interrupt_frame* iframe);
-    void isr_general_protection(interrupt_frame* iframe, uint64_t errCode);
+    void isr_general_protection(interrupt_frame* iframe);
 
     void _isr_div_by_zero();
     void _isr_breakpoint();
@@ -74,10 +74,10 @@ extern "C" {
         Cpu::halt();
     }
 
-    void isr_general_protection(interrupt_frame* iframe, uint64_t errCode) {
+    void isr_general_protection(interrupt_frame* iframe) {
         kprint("General protection exception!");
 
-        kprint("Error code: %x\n", errCode);
+        kprint("Error code: %x\n", iframe->error_code);
 
         Cpu::halt();
     }

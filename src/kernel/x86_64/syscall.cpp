@@ -9,9 +9,13 @@
 
 typedef void (*syscall)(context* regs);
 
+void syscall_print(context* regs) {
+    kprint("print: %s\n", (const char*)regs->rdi);
+}
+
 syscall syscall_list[] = {
     &syscall_read, &syscall_write, &syscall_open, &syscall_close, 
-    &syscall_getpid, &syscall_gettid, &syscall_exit
+    &syscall_getpid, &syscall_gettid, &syscall_exit, &syscall_print
 };
 
 extern "C" void syscall_main(context* regs) {

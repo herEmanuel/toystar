@@ -47,6 +47,6 @@ namespace VMM {
     extern vmm* kernel_vmm; 
 }
 
-extern "C" void isr_page_fault(interrupt_frame* frame, uint64_t errCode);
+extern "C" void isr_page_fault(interrupt_frame* iframe);
 
 #endif

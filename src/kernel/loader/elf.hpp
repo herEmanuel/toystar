@@ -9,6 +9,8 @@
 
 namespace Loader::Elf {
 
+    constexpr size_t PT_WRITE = 0x2;
+
     struct elf_header {
         uint8_t ident[16];
         uint16_t type;
@@ -28,13 +30,13 @@ namespace Loader::Elf {
 
     struct program_header {
         uint32_t type;
+        uint32_t flags;
         uint64_t offset;
         uint64_t vaddr;
         uint64_t paddr;
-        uint32_t filesz;
-        uint32_t memsz;
-        uint32_t flags;
-        uint32_t align;
+        uint64_t filesz;
+        uint64_t memsz;
+        uint64_t align;
     };
 
     enum PType {
@@ -43,7 +45,7 @@ namespace Loader::Elf {
         P_PHDR = 0x6
     };
 
-    bool load(VMM::vmm* pagemap, Vfs::fs_node* file);
+    int64_t load(VMM::vmm* pagemap, Vfs::fs_node* file);
 }
 
 #endif
