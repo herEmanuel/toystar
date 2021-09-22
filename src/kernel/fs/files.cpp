@@ -11,9 +11,9 @@ void syscall_open(context* regs) {
         return;
     }
 
-    cpu* running_proc = Cpu::local_core();
+    cpu* core_data = Cpu::local_core();
 
-    Sched::process* proc = Sched::get_proces(running_proc->pid);
+    Sched::process* proc = core_data->running_process;
     
     for (size_t i = 0; i < proc->fd_list.size(); i++) {
         if (proc->fd_list[i] == nullptr) {
@@ -28,9 +28,9 @@ void syscall_open(context* regs) {
 }
 
 void syscall_read(context* regs) {
-    cpu* running_proc = Cpu::local_core();
+    cpu* core_data = Cpu::local_core();
 
-    Sched::process* proc = Sched::get_proces(running_proc->pid);
+    Sched::process* proc = core_data->running_process;
 
     if (regs->rdi >= proc->fd_list.size()) {
         regs->rax = 1;
@@ -53,9 +53,9 @@ void syscall_read(context* regs) {
 }
 
 void syscall_write(context* regs) {
-    cpu* running_proc = Cpu::local_core();
+    cpu* core_data = Cpu::local_core();
 
-    Sched::process* proc = Sched::get_proces(running_proc->pid);
+    Sched::process* proc = core_data->running_process;
 
     if (regs->rdi >= proc->fd_list.size()) {
         regs->rax = 1;
@@ -78,9 +78,9 @@ void syscall_write(context* regs) {
 }
 
 void syscall_close(context* regs) {
-    cpu* running_proc = Cpu::local_core();
+    cpu* core_data = Cpu::local_core();
 
-    Sched::process* proc = Sched::get_proces(running_proc->pid);
+    Sched::process* proc = core_data->running_process;
 
     if (regs->rdi >= proc->fd_list.size()) {
         regs->rax = 1;

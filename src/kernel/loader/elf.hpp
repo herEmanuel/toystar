@@ -11,6 +11,10 @@ namespace Loader::Elf {
 
     constexpr size_t PT_WRITE = 0x2;
 
+    constexpr size_t ELF_64_BITS = 0x2;
+    constexpr size_t ELF_LITTLE_INDIAN = 0x1;
+    constexpr size_t ELF_SYSV = 0x0;
+
     struct elf_header {
         uint8_t ident[16];
         uint16_t type;

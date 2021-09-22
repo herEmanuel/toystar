@@ -36,7 +36,7 @@ namespace Cpu {
         asm volatile("movq %0, %%cr4" :: "r"(cr4));
     }
 
-    void halt() {
+    void hang() {
         while(true)
             asm("hlt");
     }
@@ -46,8 +46,8 @@ namespace Cpu {
 
             cpu* cpu_data = new cpu;
             cpu_data->lapic_id = smpInfo->smp_info[i].lapic_id;
-            cpu_data->pid = -1;
-            cpu_data->tid = -1;
+            cpu_data->running_thread = nullptr;
+            cpu_data->running_process = nullptr;
 
             if (smpInfo->smp_info[i].lapic_id == smpInfo->bsp_lapic_id) {
                 TSS* tss = new TSS;
@@ -83,7 +83,7 @@ namespace Cpu {
 
         __atomic_fetch_add(&cpus, 1, __ATOMIC_RELAXED);
 
-        halt();
+        hang();
     }
 
 }

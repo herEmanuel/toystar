@@ -5,23 +5,23 @@
 #include <stddef.h>
 #include <vector.hpp>
 #include <lock.hpp>
-#include <x86_64/cpu.hpp>
 #include <memory/vmm.hpp>
 #include <fs/vfs.hpp>
 
 #define USER_STACK 0x000000800000000
 #define USER_STACK_SIZE PAGE_SIZE * 8
 
+struct context;
+
 namespace Sched {
     
+    struct process;
+
     struct thread {
         size_t tid;
-        size_t parent_pid;
         size_t status;
-        size_t waiting_time;
 
-        uint64_t user_stack;
-
+        process* parent_process;
         context* regs;
     };
 
@@ -49,7 +49,6 @@ namespace Sched {
     void init();
     void queue(thread* thread_to_queue);
     process* create_process(uint64_t rip, uint64_t cs, VMM::vmm* pagemap);
-    process* get_proces(size_t pid);
 
 }
 

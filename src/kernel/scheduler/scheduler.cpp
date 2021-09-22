@@ -2,7 +2,9 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <queue.hpp>
 #include <vector.hpp>
+#include <map.hpp>
 #include <lock.hpp>
 #include <x86_64/cpu.hpp>
 #include <x86_64/apic.hpp>
@@ -13,23 +15,31 @@
 #include <fs/vfs.hpp>
 #include <fs/tmpfs.hpp>
 #include <loader/elf.hpp>
+#include <bitmap.hpp>
+#include <video.hpp>
 
 Lock::lock_t sched_lock = 0;
 
 toys::vector<Sched::process*> process_list;
-toys::vector<Sched::thread*> thread_list;
+toys::queue<Sched::thread*> waiting_queue;
+
+uint8_t* pid_bitmap = nullptr;
+uint8_t* tid_bitmap = nullptr;
 
 Sched::process* init_process = nullptr;
 
 void init_proc() {
     kprint("Main process started\n");
     
-    Cpu::halt();
+    Cpu::hang();
 }
 
 namespace Sched {
 
     void init() {
+        pid_bitmap = reinterpret_cast<uint8_t*>(PMM::alloc(1));
+        tid_bitmap = reinterpret_cast<uint8_t*>(PMM::alloc(1));
+
         // init_process = create_process((uint64_t)&init_proc, 0x8, VMM::kernel_vmm);
         // queue(init_process->threads[0]);
    
@@ -54,122 +64,76 @@ namespace Sched {
     }
 
     size_t get_new_pid() {
-        size_t len = process_list.size();
-        for (size_t i = 0; i < len; i++) {
-            if (process_list[i] == nullptr) {
-                return i;
-            }
-        }
-
-        process_list.push_back(nullptr);
-        return len;
+        return toys::Bitmap::allocate(pid_bitmap);
     }
 
     size_t get_new_tid() {
-        size_t len = thread_list.size();
-        for (size_t i = 0; i < len; i++) {
-            if (thread_list[i] == nullptr) {
-                return i;
-            }
-        }
-
-        thread_list.push_back(nullptr);
-        return len;
+        return toys::Bitmap::allocate(tid_bitmap);
     }
 
     process* create_process(uint64_t rip, uint64_t cs, VMM::vmm* pagemap) {
-        process* newProcess = new process;
+        process* new_process = new process;
 
-        newProcess->status = Status::Waiting;
-        newProcess->pagemap = pagemap;
+        new_process->status = Status::Waiting;
+        new_process->pagemap = pagemap;
 
-        thread* mainThread = new thread;
+        thread* main_thread = new thread;
 
-        mainThread->status = Status::Waiting;
-        mainThread->waiting_time = 0;
-        mainThread->regs = new context;
+        main_thread->status = Status::Waiting;
+        main_thread->regs = new context;
 
-        memset(mainThread->regs, 0, sizeof(context));
+        memset(main_thread->regs, 0, sizeof(context));
 
         uint64_t stack = (uint64_t) PMM::alloc(USER_STACK_SIZE / PAGE_SIZE);
         
-        //TODO: take a look at this
         if (cs & 0x3) {
             //userland process
             pagemap->map_range(USER_STACK, stack, USER_STACK_SIZE, 0b111, 0);
 
-            mainThread->user_stack = USER_STACK + USER_STACK_SIZE;
-            mainThread->regs->rsp = mainThread->user_stack;
-            kprint("rsp: %x\n", mainThread->regs->rsp);
-            mainThread->regs->ss = 0x20 | 0x3; // | 0x3 sets the RPL
+            main_thread->regs->rsp = USER_STACK + USER_STACK_SIZE;
+            main_thread->regs->ss = 0x20 | 0x3; // | 0x3 sets the RPL
         } else {
             //kernel process
-            mainThread->regs->rsp = stack + PHYSICAL_BASE_ADDRESS;
-            mainThread->regs->ss = 0x10;
+            main_thread->regs->rsp = stack + PHYSICAL_BASE_ADDRESS;
+            main_thread->regs->ss = 0x10;
         }
 
-        mainThread->regs->rip = rip;
-        mainThread->regs->rflags = 0x202;
-        mainThread->regs->cs = cs;
-        newProcess->threads.push_back(mainThread);
+        main_thread->regs->rip = rip;
+        main_thread->regs->rflags = 0x202;
+        main_thread->regs->cs = cs;
+        new_process->threads.push_back(main_thread);
 
         Lock::acquire(&sched_lock);
 
-        newProcess->pid = get_new_pid();
-        mainThread->tid = get_new_tid();
-        mainThread->parent_pid = newProcess->pid;
+        new_process->pid = get_new_pid();
+        main_thread->tid = get_new_tid();
+        main_thread->parent_process = new_process;
 
-        process_list[newProcess->pid] = newProcess;
+        process_list.push_back(new_process);
 
         Lock::release(&sched_lock);
         
-        return newProcess;  
-    }
-
-    process* get_proces(size_t pid) {
-        Lock::acquire(&sched_lock);
-
-        if (pid >= process_list.size()) {
-            return nullptr;
-        }
-
-        process* proc = process_list[pid];
-
-        Lock::release(&sched_lock);
-        return proc;
+        return new_process;  
     }
 
     void queue(thread* thread_to_queue) {
         Lock::acquire(&sched_lock);
         
-        thread_list[thread_to_queue->tid] = thread_to_queue;
+        waiting_queue.push(thread_to_queue);
 
         Lock::release(&sched_lock);
     }
     
     extern "C" void reschedule(context* regs) {
-        size_t waiting_amount = 0;
-        int thread_id = -1;
- 
         cpu* current_core = Cpu::local_core();
 
         Lock::acquire(&sched_lock);
         
-        for (size_t i = 0; i < thread_list.size(); i++) {
-            if (thread_list[i] == nullptr || thread_list[i]->status == Status::Running) 
-                continue;
-
-            thread_list[i]->waiting_time++;
-            
-            if (thread_list[i]->waiting_time >= waiting_amount) {
-                waiting_amount = thread_list[i]->waiting_time;
-                thread_id = thread_list[i]->tid;
-            }
-        }
+        thread* scheduled_thread = waiting_queue.pop().value_or(nullptr);
     
-        if (thread_id == -1) {
-            if (current_core->tid != -1) {
-                thread_id = current_core->tid;
+        if (scheduled_thread == nullptr) {
+            if (current_core->running_thread != nullptr) {
+                scheduled_thread = current_core->running_thread;
             } else {
                 Lock::release(&sched_lock);
                 Apic::localApic->eoi();
@@ -177,15 +141,13 @@ namespace Sched {
             }
         }
         
-        thread* scheduled_thread = thread_list[thread_id];
-        
-        if (current_core->pid != -1 && current_core->tid != -1) {
-            thread* previous_thread = thread_list[current_core->tid];
+        if (current_core->running_process != nullptr && current_core->running_thread != nullptr) {
+            thread* previous_thread = current_core->running_thread;
 
             previous_thread->status = Status::Waiting;
             previous_thread->regs = regs;
 
-            process* previous_process = process_list[current_core->pid];
+            process* previous_process = current_core->running_process;
             previous_process->status = Status::Waiting;
 
             for (size_t i = 0; i < previous_process->threads.size(); i++) {
@@ -196,19 +158,19 @@ namespace Sched {
                     }
             }
 
+            // S-L-O-W A-F
+            waiting_queue.push(previous_thread);
         }
-
-        process* parent_process = process_list[scheduled_thread->parent_pid];
+        
+        process* parent_process = scheduled_thread->parent_process;
         parent_process->status = Status::Running;
 
         scheduled_thread->status = Status::Running;
-        scheduled_thread->waiting_time = 0;
-
+        
         Lock::release(&sched_lock);
     
-        current_core->tid = scheduled_thread->tid;
-        current_core->pid = parent_process->pid;
-        current_core->user_stack = scheduled_thread->user_stack;
+        current_core->running_thread = scheduled_thread;
+        current_core->running_process = parent_process;
         current_core->pagemap = parent_process->pagemap;
         current_core->working_dir = parent_process->process_directory;
         
@@ -223,13 +185,13 @@ namespace Sched {
 void syscall_getpid(context* regs) {
     cpu* current = Cpu::local_core();
 
-    regs->rax = current->pid;
+    regs->rax = current->running_process->pid;
 }
 
 void syscall_gettid(context* regs) {
     cpu* current = Cpu::local_core();
 
-    regs->rax = current->tid;
+    regs->rax = current->running_thread->tid;
 }
 
 void syscall_exit(context* regs) {
@@ -237,27 +199,43 @@ void syscall_exit(context* regs) {
 
     Lock::acquire(&sched_lock);
 
-    Sched::process* proc = process_list[current_core->pid];
-
-    process_list[proc->pid] = nullptr;
-
+    Sched::process* proc = current_core->running_process;
+    
+    for (size_t i = 0; i < process_list.size(); i++) {
+        if (process_list[i]->pid == proc->pid) 
+            process_list.erase(i);
+    }
+    
     for (size_t i = 0; i < proc->fd_list.size(); i++) {
         delete proc->fd_list[i];
     }
 
-    //TODO: delete user stack and pagemap
+    uint64_t stack_addr = proc->pagemap->virtual_to_physical(USER_STACK);
+    PMM::free((void*)stack_addr, USER_STACK_SIZE/PAGE_SIZE);
+    
+    //TODO: delete user pagemap
 
+    //thats gonna be slow af
     for (size_t i = 0; i < proc->threads.size(); i++) {
-        thread_list[proc->threads[i]->tid] = nullptr;
+        if (proc->threads[i]->status == Sched::Status::Running) 
+            continue;
+
+        for (size_t t = 0; t < waiting_queue.size(); t++) {
+            if (waiting_queue[t]->tid == proc->threads[i]->tid)
+                waiting_queue.erase(t);
+        }
+
+        toys::clear_bit(tid_bitmap, proc->threads[i]->tid);
         delete proc->threads[i];
     }
 
+    toys::clear_bit(pid_bitmap, proc->pid);
     delete proc;
 
     Lock::release(&sched_lock);
 
-    current_core->tid = -1;
-    current_core->pid = -1;
-
-    Cpu::halt();
+    current_core->running_thread = nullptr;
+    current_core->running_process = nullptr;
+ 
+    Cpu::hang();
 }

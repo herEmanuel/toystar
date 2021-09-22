@@ -9,11 +9,9 @@ namespace Toystar::utils {
     void panic(const char* msg) {
         asm("cli");
         
-        clear_screen(0xff1340);
-        
         kprint("Kernel panic: %s\n", msg);
 
-        Cpu::halt();
+        Cpu::hang();
     }
 
 }
@@ -23,5 +21,5 @@ void __assert(const char* msg, const char* file, size_t line) {
     
     kprint("Assertation failed at %s, line %d: %s\n", file, line, msg);
 
-    Cpu::halt();
+    Cpu::hang();
 }

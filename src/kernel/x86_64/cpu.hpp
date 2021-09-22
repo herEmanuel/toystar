@@ -6,6 +6,7 @@
 #include <boot/stivale2.hpp>
 #include <memory/vmm.hpp>
 #include <fs/vfs.hpp>
+#include <scheduler/scheduler.hpp>
 
 #define GSBase 0xC0000101
 #define KernelGSBase 0xC0000102
@@ -51,11 +52,9 @@ struct context {
 };
 
 struct cpu {
-    uint64_t user_stack;
-    uint64_t kernel_stack;
     uint8_t lapic_id;
-    int tid;
-    int pid;
+    Sched::process* running_process;
+    Sched::thread* running_thread;
     Vfs::fs_node* working_dir;
     VMM::vmm* pagemap;
 };
@@ -69,7 +68,7 @@ struct cpuid_return {
 
 namespace Cpu {
 
-    void halt();
+    void hang();
     void init_features();
     void bootstrap_cores(stivale2_struct_tag_smp* smpInfo);
     void core_init(stivale2_smp_info* smpInfo);

@@ -15,18 +15,16 @@ namespace toys {
     template<typename T>
     class queue {
         vector<T> m_data;
-        size_t m_size;
 
     public:
         queue() {
-            m_size = 0;
         }
 
         ~queue() {
         }
 
         optional<T> front() {
-            if (!m_size) {
+            if (!m_data.size()) {
                 return nullopt;
             }
 
@@ -34,39 +32,39 @@ namespace toys {
         }
 
         optional<T> back() {
-            if (!m_size) {
+            if (!m_data.size()) {
                 return nullopt;
             }
 
-            return m_data[m_size-1];
+            return m_data[m_data.size()-1];
+        }
+
+        T& operator[](size_t index) {
+            return m_data[index];
         }
 
         void push(const T value) {
             m_data.push_back(value);
-            m_size++;
         }
 
         optional<T> pop() {
-            if (!m_size) {
+            if (!m_data.size()) {
                 return nullopt;
             }
 
             T value = m_data[0];
 
-            vector<T> new_data(m_size-1);
-
-            for (size_t i = 0; i < m_size-1; i++) {
-                new_data[i] = m_data[i+1];
-            }
-
-            m_data = new_data;
-            m_size--;
+            m_data.erase(0);
 
             return value;
         }
 
+        bool erase(size_t index) {
+            return m_data.erase(index);
+        }
+
         size_t size() {
-            return m_size;
+            return m_data.size();
         }
     };
 

@@ -24,12 +24,8 @@ namespace Loader::Elf {
             return -1;
         }
 
-        /*
-            return if the executable is not 64 bits or not little endian or 
-            if it doesn't use the SysV abi
-        */
-        if (start.ident[4] != 0x2 || start.ident[5] != 0x1 
-            || start.ident[7] != 0x0) {
+        if (start.ident[4] != ELF_64_BITS || start.ident[5] != ELF_LITTLE_INDIAN 
+            || start.ident[7] != ELF_SYSV) {
             return -1;
         }
         

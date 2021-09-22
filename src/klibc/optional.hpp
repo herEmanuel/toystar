@@ -12,7 +12,7 @@ namespace toys {
         uint8_t n;
     };
 
-    nullopt_t nullopt = {0};
+    extern nullopt_t nullopt;
 
     template<typename T>
     class optional {
@@ -41,6 +41,14 @@ namespace toys {
         T& value_or(T option) {
             if (m_empty) {
                 return option;
+            }
+
+            return *m_value;
+        }
+
+        T value_or(nullptr_t) {
+            if (m_empty) {
+                return nullptr;
             }
 
             return *m_value;

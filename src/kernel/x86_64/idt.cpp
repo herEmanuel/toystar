@@ -59,19 +59,19 @@ extern "C" {
     void isr_div_by_zero(interrupt_frame* iframe) {
         kprint("Division by zero!");
         
-        Cpu::halt();
+        Cpu::hang();
     }
 
     void isr_breakpoint(interrupt_frame* iframe) {
         kprint("Breakpoint");
         
-        Cpu::halt();
+        Cpu::hang();
     }
 
     void isr_double_fault(interrupt_frame* iframe) {
         kprint("Double fault!");
         
-        Cpu::halt();
+        Cpu::hang();
     }
 
     void isr_general_protection(interrupt_frame* iframe) {
@@ -79,7 +79,7 @@ extern "C" {
 
         kprint("Error code: %x\n", iframe->error_code);
 
-        Cpu::halt();
+        Cpu::hang();
     }
 
 }
