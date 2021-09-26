@@ -51,7 +51,7 @@ namespace Cpu {
 
             if (smpInfo->smp_info[i].lapic_id == smpInfo->bsp_lapic_id) {
                 TSS* tss = new TSS;
-                tss->rsp0 = (uint64_t) PMM::alloc(4);
+                tss->rsp0 = (uint64_t) (PMM::alloc(4) + PHYSICAL_BASE_ADDRESS);
 
                 load_tss((uint64_t)tss);
 
@@ -59,7 +59,7 @@ namespace Cpu {
                 continue;
             }
 
-            void* stack = PMM::alloc(4);
+            void* stack = PMM::alloc(4) + PHYSICAL_BASE_ADDRESS;
 
             smpInfo->smp_info[i].target_stack = reinterpret_cast<uint64_t>(stack);
             smpInfo->smp_info[i].extra_argument = reinterpret_cast<uint64_t>(cpu_data);

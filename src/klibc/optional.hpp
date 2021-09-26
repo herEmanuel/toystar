@@ -46,12 +46,8 @@ namespace toys {
             return *m_value;
         }
 
-        T value_or(nullptr_t) {
-            if (m_empty) {
-                return nullptr;
-            }
-
-            return *m_value;
+        T* value() {
+            return m_value;
         }
 
     };

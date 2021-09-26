@@ -23,21 +23,23 @@ namespace VMM {
 
     class vmm {
         uint64_t* m_pml4;
-        toys::vector<MemArea*> ranges;
+        toys::vector<MemArea*> m_ranges;
 
         uint64_t* get_next_level(uint64_t* currLevelPtr, uint16_t entry);
     public:
         vmm();
-        vmm(bool bruh);
+        vmm(bool non_default);
         void map_page(uint64_t virt, uint64_t phys, uint16_t flags);
         void map_range_raw(uint64_t virt, uint64_t phys, size_t length, size_t prot);
         void unmap_page(uint64_t virt);
         void unmap_range_raw(uint64_t virt, size_t length);
         void map_range(uint64_t virt, uint64_t phys, size_t length, size_t prot, size_t flags);
         uint64_t virtual_to_physical(uint64_t virt);
+        vmm* duplicate();
         void switch_pagemap();
 
         void set_pml4(uint64_t pml4);
+        toys::vector<MemArea*> get_ranges();
 
         inline void invlpg(uint64_t addr) {
             asm volatile ("invlpg (%0)" :: "r"(addr));

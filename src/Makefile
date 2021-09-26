@@ -1,4 +1,4 @@
-CC := ../../../../x86_64-elf/bin/x86_64-elf-g++
+CC := x86_64-elf-g++
 ASM := nasm
 
 CFLAGS := -I . -I ./kernel -I ./klibc -ffreestanding -Wall -Wextra \

@@ -32,6 +32,7 @@ namespace toys {
             for (size_t i = 0; i < sizeof(bitmap) * 8; i++) {
                 if (is_bit_set(bitmap, i)) { continue; }
 
+                set_bit(bitmap, i);
                 return i;
             }
         }

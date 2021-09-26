@@ -48,12 +48,14 @@ namespace Sched {
 
     void init();
     void queue(thread* thread_to_queue);
-    process* create_process(uint64_t rip, uint64_t cs, VMM::vmm* pagemap);
+    process* create_process(uint64_t rip, uint64_t cs, VMM::vmm* pagemap, Vfs::fs_node* dir);
+    bool start_program(const char* path, const char** argv);
 
 }
 
 void syscall_getpid(context* regs);
 void syscall_gettid(context* regs);
 void syscall_exit(context* regs);
+void syscall_fork(context* regs);
 
 #endif

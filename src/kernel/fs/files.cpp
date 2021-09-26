@@ -7,7 +7,7 @@ void syscall_open(context* regs) {
     auto fd = Vfs::open((const char*)regs->rdi, (uint16_t)regs->rsi);
 
     if (fd == nullptr) {
-        regs->rax = 1;
+        regs->rax = -1;
         return;
     }
 
@@ -33,19 +33,14 @@ void syscall_read(context* regs) {
     Sched::process* proc = core_data->running_process;
 
     if (regs->rdi >= proc->fd_list.size()) {
-        regs->rax = 1;
+        regs->rax = -1;
         return;
     }
 
     auto fd = proc->fd_list[regs->rdi];
 
-    if (fd == nullptr) {
-        regs->rax = 1;
-        return;
-    }
-
-    if (!(fd->mode & Vfs::Modes::READ)) {
-        regs->rax = 1;
+    if (fd == nullptr || !(fd->mode & Vfs::Modes::READ)) {
+        regs->rax = -1;
         return;
     }
 
@@ -58,19 +53,14 @@ void syscall_write(context* regs) {
     Sched::process* proc = core_data->running_process;
 
     if (regs->rdi >= proc->fd_list.size()) {
-        regs->rax = 1;
+        regs->rax = -1;
         return;
     }
 
     auto fd = proc->fd_list[regs->rdi];
 
-    if (fd == nullptr) {
-        regs->rax = 1;
-        return;
-    }
-
-    if (!(fd->mode & Vfs::Modes::WRITE)) {
-        regs->rax = 1;
+    if (fd == nullptr || !(fd->mode & Vfs::Modes::WRITE)) {
+        regs->rax = -1;
         return;
     }
 
@@ -83,7 +73,7 @@ void syscall_close(context* regs) {
     Sched::process* proc = core_data->running_process;
 
     if (regs->rdi >= proc->fd_list.size()) {
-        regs->rax = 1;
+        regs->rax = -1;
         return;
     }
 

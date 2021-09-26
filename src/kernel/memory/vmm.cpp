@@ -7,6 +7,8 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <math.hpp>
+#include <memory.hpp>
 
 extern "C" void _isr_page_fault();
 
@@ -32,21 +34,29 @@ namespace VMM {
     vmm::vmm() {
     }
 
-    vmm::vmm(bool bruh) {
-        if (bruh) {
-            m_pml4 = (uint64_t*) (PMM::alloc(1) + PHYSICAL_BASE_ADDRESS);
-        }
+    vmm::vmm(bool non_default) {
+        m_pml4 = (uint64_t*) (PMM::alloc(1) + PHYSICAL_BASE_ADDRESS);
+
+        //copies the mapping of 0xffff800000000000 from the kernel pagemap
+        m_pml4[256] = kernel_vmm->m_pml4[256]; 
+
+        //copies the mapping of 0xffffffff80000000 from the kernel pagemap
+        m_pml4[511] = kernel_vmm->m_pml4[511];
     }
 
     uint64_t* vmm::get_next_level(uint64_t* currLevelPtr, uint16_t entry) {
+        if (!((uint64_t)currLevelPtr & PHYSICAL_BASE_ADDRESS)) {
+            currLevelPtr += PHYSICAL_BASE_ADDRESS / sizeof(uint64_t);
+        }
+
         if (!currLevelPtr[entry] & 1) {
-            uint64_t allocated = (uint64_t)PMM::alloc(1);
+            uint64_t allocated = (uint64_t) PMM::alloc(1);
             currLevelPtr[entry] = allocated | 0b111;
 
-            return (uint64_t*)allocated; 
+            return (uint64_t*) (allocated + PHYSICAL_BASE_ADDRESS); 
         }
     
-        return (uint64_t*)(currLevelPtr[entry] & 0xfffffffffffff000);
+        return (uint64_t*) ((currLevelPtr[entry] & 0xfffffffffffff000) + PHYSICAL_BASE_ADDRESS);
     }
 
     void vmm::map_page(uint64_t virt, uint64_t phys, uint16_t flags) {
@@ -56,11 +66,11 @@ namespace VMM {
         pdpe = ((virt >> 30) & 0x1FF);
         pde = ((virt >> 21) & 0x1FF);
         pte = ((virt >> 12) & 0x1FF);
-
+        
         uint64_t* pdp = get_next_level(m_pml4, pml4e);
         uint64_t* pd = get_next_level(pdp, pdpe);
         uint64_t* pt = get_next_level(pd, pde);
-
+        
         pt[pte] = phys | flags;
     }
 
@@ -106,9 +116,37 @@ namespace VMM {
         range->limit = length;
         range->prot = prot;
         range->flags = flags;
-        ranges.push_back(range);
+        m_ranges.push_back(range);
         
         map_range_raw(virt, phys, length, prot);
+    }
+
+    vmm* vmm::duplicate() {
+        vmm* new_pagemap = new vmm(true);
+        
+        for (size_t i = 0; i < m_ranges.size(); i++) {
+            MemArea* range = m_ranges[i];
+
+            size_t page_number = DIV_CEIL(range->limit, PAGE_SIZE);
+            uint64_t base = range->base & ~(4095);
+
+            for (size_t t = 0; t < page_number; t++) {
+                void* addr = PMM::alloc(1);
+                void* src = (void*)(base + t*PAGE_SIZE);
+
+                memcpy8(addr + PHYSICAL_BASE_ADDRESS, src, PAGE_SIZE);
+            
+                new_pagemap->map_page((uint64_t)src, (uint64_t)addr, range->prot);
+            }
+
+            MemArea* new_range = new MemArea;
+            
+            memcpy(new_range, range, sizeof(MemArea));
+            
+            new_pagemap->get_ranges().push_back(new_range);
+        }
+
+        return new_pagemap;
     }
 
     void vmm::switch_pagemap() {
@@ -125,13 +163,21 @@ namespace VMM {
         m_pml4 = (uint64_t*) pml4;
     }
 
+    toys::vector<MemArea*> vmm::get_ranges() {
+        return m_ranges;
+    }
+
 }
 
 extern "C" void isr_page_fault(interrupt_frame* iframe) {
     kprint("Page fault!");
 
-    kprint("Error code: ");
-    kprint(iframe->error_code);
+    kprint("Error code: %d\n", iframe->error_code);
+
+    uint64_t cr2;
+    asm volatile("movq %%cr2, %0" : "=r"(cr2));
+
+    kprint("CR2: %x\n", cr2);
 
     while(true)
         asm("hlt");

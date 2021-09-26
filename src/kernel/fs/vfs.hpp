@@ -44,6 +44,7 @@ namespace Vfs {
         fs_node* link; // used for symlinks
 
         void* device_node; //pointer to a wrapper for this node
+        fs_node* parent; // parent directory
         filesystem* fs;
     };
 
@@ -79,7 +80,7 @@ namespace Vfs {
     int write(fs_node* path, size_t offset, size_t size, char* buffer);
     int mkdir(const char* path);
 
-    fs_node* new_fs_node(const char* name, size_t size, uint8_t permi, uint8_t type, void* dn, filesystem* fs);
+    fs_node* new_fs_node(const char* name, size_t size, uint8_t permi, uint8_t type, void* dn, fs_node* parent, filesystem* fs);
 }
 
 extern Vfs::node* vfs_root_node;

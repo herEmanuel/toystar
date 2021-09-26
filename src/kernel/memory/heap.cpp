@@ -18,7 +18,7 @@ Lock::lock_t heap_lock = 0;
 namespace Heap {
 
     void init() {
-        allocator = (BuddyAllocator*) PMM::alloc(1);
+        allocator = (BuddyAllocator*) (PMM::alloc(1) + PHYSICAL_BASE_ADDRESS);
 
         if (!allocator) {
             Toystar::utils::panic("could not initialize the kernel heap");

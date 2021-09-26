@@ -144,7 +144,7 @@ namespace Vfs {
         return _path;
     }
 
-    fs_node* new_fs_node(const char* name, size_t size, uint8_t permi, uint8_t type, void* dn, filesystem* fs) {
+    fs_node* new_fs_node(const char* name, size_t size, uint8_t permi, uint8_t type, void* dn, fs_node* parent, filesystem* fs) {
         fs_node* node = new fs_node;
         node->name = name;
         node->size = size;
@@ -152,6 +152,7 @@ namespace Vfs {
         node->type = type;
         node->device_node = dn;
         node->fs = fs;
+        node->parent = parent;
         return node;
     }
 

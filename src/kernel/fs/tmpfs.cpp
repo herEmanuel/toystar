@@ -27,7 +27,7 @@ namespace Tmpfs {
         root_tmpfs_node = new tmpfs_node;
 
         root_tmpfs_node->file = Vfs::new_fs_node("/", 0, 0, Vfs::FileType::Directory, 
-                                                (void*)root_tmpfs_node, tmp_filesystem);
+                                                (void*)root_tmpfs_node, nullptr, tmp_filesystem);
         
         root_tmpfs_node->children = nullptr;
         root_tmpfs_node->next = nullptr;
@@ -152,9 +152,9 @@ namespace Tmpfs {
             tmpfs_node* new_file = new tmpfs_node;
             
             new_file->file = Vfs::new_fs_node(get_name_from_path(path), 4096, 0, Vfs::FileType::File, 
-                                                (void*)new_file, tmp_filesystem);
+                                                (void*)new_file, node->file, tmp_filesystem);
 
-            new_file->data = reinterpret_cast<uint8_t*>(PMM::alloc(1));
+            new_file->data = reinterpret_cast<uint8_t*>(PMM::alloc(1) + PHYSICAL_BASE_ADDRESS);
             new_file->children = nullptr;
 
             tmpfs_node* parent_node = node;
@@ -188,7 +188,7 @@ namespace Tmpfs {
         size_t pages = DIV_CEIL(new_size, PAGE_SIZE);
 
         //TODO: use non-sequential pages
-        void* new_data = PMM::alloc(pages);
+        void* new_data = PMM::alloc(pages) + PHYSICAL_BASE_ADDRESS;
 
         if (new_data == nullptr) {
             return false;
@@ -247,7 +247,7 @@ namespace Tmpfs {
         tmpfs_node* dir = new tmpfs_node;
 
         dir->file = Vfs::new_fs_node(get_name_from_path(path), 0, 0, 
-                                        Vfs::FileType::Directory, (void*)dir, tmp_filesystem);
+                                        Vfs::FileType::Directory, (void*)dir, parent->file, tmp_filesystem);
 
         dir->children = nullptr;
         dir->parent = parent;
