@@ -26,10 +26,8 @@ namespace toys {
         }
 
         optional(nullopt_t n) {
-            if (&n == &nullopt) {
-                m_value = nullptr;
-                m_empty = true;
-            }
+            m_value = nullptr;
+            m_empty = true;
         }
 
         ~optional() {

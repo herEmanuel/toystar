@@ -1,25 +1,41 @@
 #include "utils.hpp"
 #include <video.hpp>
+#include <drivers/serial.hpp>
 #include <x86_64/cpu.hpp>
 #include <assert.hpp>
 #include <strings.hpp>
 
-namespace Toystar::utils {
+void panic(const char* msg) {
+    asm("cli");
+    
+    print("Kernel panic: %s\n", msg);
 
-    void panic(const char* msg) {
-        asm("cli");
-        
-        kprint("Kernel panic: %s\n", msg);
-
-        Cpu::hang();
-    }
-
+    Cpu::hang();
 }
 
 void __assert(const char* msg, const char* file, size_t line) {
     asm("cli");
     
-    kprint("Assertation failed at %s, line %d: %s\n", file, line, msg);
+    print("Assertation failed at %s, line %d: %s\n", file, line, msg);
 
     Cpu::hang();
+}
+
+void log(const char* msg) {
+    size_t i = 0;
+
+    while (msg[i]) {
+        Serial::send_char(msg[i]);
+        i++;
+    }
+}
+
+void log(size_t num) {
+    const char* msg = itoa(num, 16);
+    log(msg);
+}
+
+void log(size_t num, size_t base) {
+    const char* msg = itoa(num, base);
+    log(msg);
 }

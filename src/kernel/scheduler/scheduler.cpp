@@ -16,7 +16,7 @@
 #include <fs/tmpfs.hpp>
 #include <loader/elf.hpp>
 #include <bitmap.hpp>
-#include <video.hpp>
+#include <utils.hpp>
 #include <drivers/hpet.hpp>
 
 Lock::lock_t sched_lock = 0;
@@ -33,23 +33,23 @@ Lock::lock_t tid_lock = 0;
 Sched::process* init_process = nullptr;
 
 void init_proc() {
-    kprint("Main process started\n");
+    log("Main process started\n");
     Sched::start_program("/hello.elf", nullptr);
 
     // int64_t res;
     // asm volatile("mov $0x8, %rax");
     // asm volatile("int $0x80" ::: "rax");
     // asm volatile("mov %%rax, %0" : "=r"(res));
-    // kprint("res: %d\n", res);
+    // log("res: %d\n", res);
     // if (res == 0) {
-    //     kprint("nothing\n");
+    //     log("nothing\n");
     //     // while(true) {
-    //     //     kprint("CHILD PROCESS YOOO\n");
+    //     //     log("CHILD PROCESS YOOO\n");
     //     //     Hpet::sleep(500);
     //     // }
     // } else {
     //     while(true) {
-    //         kprint("PARENT PROCESS!! %d\n", res);
+    //         log("PARENT PROCESS!! %d\n", res);
     //         Hpet::sleep(500);
     //     }
     // }
@@ -69,17 +69,17 @@ namespace Sched {
         Apic::localApic->calibrate_timer(500);
     }
 
-    size_t get_new_pid() {
+    int64_t get_new_pid() {
         Lock::acquire(&pid_lock);
-        size_t pid = toys::Bitmap::allocate(pid_bitmap);
+        int64_t pid = toys::Bitmap::allocate(pid_bitmap);
         Lock::release(&pid_lock);
 
         return pid;
     }
 
-    size_t get_new_tid() {
+    int64_t get_new_tid() {
         Lock::acquire(&tid_lock);
-        size_t tid = toys::Bitmap::allocate(tid_bitmap);
+        int64_t tid = toys::Bitmap::allocate(tid_bitmap);
         Lock::release(&tid_lock);
         
         return tid;
@@ -120,8 +120,15 @@ namespace Sched {
 
         Lock::acquire(&sched_lock);
 
-        new_process->pid = get_new_pid();
-        main_thread->tid = get_new_tid();
+        int64_t new_pid = get_new_pid(); 
+        int64_t new_tid = get_new_tid(); 
+
+        if (new_pid == -1 || new_tid == -1) {
+            return nullptr;
+        }
+
+        new_process->pid = new_pid;
+        main_thread->tid = new_tid;
         main_thread->parent_process = new_process;
 
         process_list.push_back(new_process);
@@ -158,16 +165,15 @@ namespace Sched {
 
         Lock::release(&sched_lock);
     }
-    
+
     extern "C" void reschedule(context* regs) {
-        kprint("RIP: %x\n", regs->rip);
         cpu* current_core = Cpu::local_core();
         
         Lock::acquire(&sched_lock);
         
         auto queue_obj = waiting_queue.pop().value();
         thread* scheduled_thread = (queue_obj != nullptr) ? *queue_obj : nullptr;
-        
+       
         if (scheduled_thread == nullptr) {
             if (current_core->running_thread != nullptr) {
                 scheduled_thread = current_core->running_thread;
@@ -176,9 +182,8 @@ namespace Sched {
                 Apic::localApic->eoi();
                 return;
             }
-        }
-        kprint("tid: %d\n", scheduled_thread->tid);
-    
+        }   
+        
         if (current_core->running_thread != nullptr && current_core->running_thread != scheduled_thread) {
             thread* previous_thread = current_core->running_thread;
             
@@ -196,10 +201,9 @@ namespace Sched {
                     }
             }
 
-            // S-L-O-W A-F
             waiting_queue.push(previous_thread);
         }
-
+        
         process* parent_process = scheduled_thread->parent_process;
         parent_process->status = Status::Running;
 
@@ -215,9 +219,7 @@ namespace Sched {
         parent_process->pagemap->switch_pagemap();
 
         Apic::localApic->eoi();
-        kprint("end\n");
-        kprint("scheduled rip: %x\n", scheduled_thread->regs->rip);
-        // asm volatile("int $0x3");
+        
         context_switch(scheduled_thread->regs);
     }
 }
@@ -281,7 +283,6 @@ void syscall_exit(context* regs) {
 }
 
 void syscall_fork(context* regs) {
-    kprint("at fork\n");
     cpu* current_core = Cpu::local_core();
 
     Sched::process* parent = current_core->running_process;
@@ -290,6 +291,7 @@ void syscall_fork(context* regs) {
     Lock::acquire(&sched_lock);
     process_list.push_back(child);
     Lock::release(&sched_lock);
+    allocator->dump_heap();
 
     child->pid = Sched::get_new_pid();
 
@@ -304,21 +306,32 @@ void syscall_fork(context* regs) {
 
         child->fd_list.push_back(fd);
     }
-    
     Sched::thread* main_thread = new Sched::thread;
+    log("thread addr: %x\n", (uint64_t)main_thread);
+    allocator->dump_heap();
     main_thread->regs = new context;
-    main_thread->tid = Sched::get_new_tid();
+
+    int64_t new_tid = Sched::get_new_tid();
+    if (new_tid == -1) {
+        regs->rax = -1;
+    }
+
+    main_thread->tid = new_tid;
     main_thread->status = Sched::Status::Waiting;
     main_thread->parent_process = child;
 
     memcpy(main_thread->regs, regs, sizeof(context));
     main_thread->regs->rax = 0;
-    
+
     child->threads.push_back(main_thread);
-
+    allocator->dump_heap();
     Sched::queue(main_thread);
-
-    kprint("child tid: %d | parent tid: %d\n", main_thread->tid, parent->threads[0]->tid);
 
     regs->rax = child->pid;
 }
+
+// void syscall_execve(context* regs) {
+//     cpu* current = Cpu::local_core();
+
+    
+// }

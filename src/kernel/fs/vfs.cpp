@@ -2,7 +2,7 @@
 #include <memory/heap.hpp>
 #include <vector.hpp>
 #include <strings.hpp>
-#include <video.hpp>
+#include <utils.hpp>
 #include <x86_64/cpu.hpp>
 #include <lock.hpp>
 
@@ -102,7 +102,7 @@ namespace Vfs {
 
         while (head != nullptr) {
             const char* parent_name = (head->parent != nullptr) ? head->parent->name : "null";
-            kprint("name: %s | parent: %s\n", head->name, parent_name);
+            log("name: %s | parent: %s\n", head->name, parent_name);
             print_nodes(head);
             head = head->next;
         }

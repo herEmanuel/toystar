@@ -1,11 +1,10 @@
-#ifndef VGA_H
-#define VGA_H
+#ifndef VIDEO_H
+#define VIDEO_H
+
+#include <boot/stivale2.hpp>
 
 #include <stdint.h>
 #include <stddef.h>
-
-#include <boot/stivale2.hpp>
-#include <strings.hpp>
 
 void video_init(stivale2_struct_tag_framebuffer* frameBufferTag);
 
@@ -17,12 +16,12 @@ void clear_screen(uint32_t color);
 
 void print_char(char c, uint32_t color);
 
-void kprint(const char* msg);
-void kprint(size_t num);
-void kprint(size_t num, size_t base);
+void print(const char* msg);
+void print(size_t num);
+void print(size_t num, size_t base);
 
 template<typename T, typename... Args>
-void kprint(const char* msg, T value, Args... args) {
+void print(const char* msg, T value, Args... args) {
     size_t i = 0;
     
     while (msg[i]) {
@@ -30,15 +29,15 @@ void kprint(const char* msg, T value, Args... args) {
             switch (msg[++i]) {
                 case 'd':
                 case 'i':
-                    kprint(value, 10);
+                    print(value, 10);
                     break;
 
                 case 's':
-                    kprint(value);
+                    print(value);
                     break;
 
                 case 'x':
-                    kprint(value, 16);
+                    print(value, 16);
                     break;
 
                 case '%':
@@ -50,28 +49,13 @@ void kprint(const char* msg, T value, Args... args) {
             }
             i++;
             
-            kprint(msg + i, args...);
+            print(msg + i, args...);
             return;
         }
 
         print_char(msg[i], 0xffffff);
         i++;
     }
-}
-
-void log(const char* msg);
-
-template<typename T, typename... Args>
-void log(const char* msg, T value, Args... args) {
-    print_char('[', 0xF8F0FB);
-    print_char('I', 0x6320EE);
-    print_char('N', 0x6320EE);
-    print_char('F', 0x6320EE);
-    print_char('O', 0x6320EE);
-    print_char(']', 0xF8F0FB);
-    print_char(' ', 0x0);
-
-    kprint(msg, value, args...);
 }
 
 #endif

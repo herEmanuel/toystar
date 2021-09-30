@@ -5,12 +5,11 @@
 #include <fs/files.hpp>
 #include "cpu.hpp"
 #include <utils.hpp>
-#include <video.hpp>
 
 typedef void (*syscall)(context* regs);
 
 void syscall_print(context* regs) {
-    kprint("%s\n", (const char*)regs->rdi);
+    log("%s\n", (const char*)regs->rdi);
 }
 
 syscall syscall_list[] = {
@@ -20,7 +19,7 @@ syscall syscall_list[] = {
 
 extern "C" void syscall_main(context* regs) {
     if (regs->rax >= sizeof(syscall_list)/sizeof(syscall)) {
-        Toystar::utils::panic("invalid syscall"); //TODO: treat it properly
+        panic("invalid syscall"); //TODO: treat it properly
     }
     
     syscall_list[regs->rax](regs);

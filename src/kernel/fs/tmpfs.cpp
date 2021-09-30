@@ -198,7 +198,7 @@ namespace Tmpfs {
 
         memcpy(new_data, (void*)node->data, size);
 
-        PMM::free((void*)node->data, DIV_CEIL(node->file->size, PAGE_SIZE));
+        PMM::free((void*)node->data - PHYSICAL_BASE_ADDRESS, DIV_CEIL(node->file->size, PAGE_SIZE));
 
         node->data = (uint8_t*) new_data;
 

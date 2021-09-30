@@ -1,6 +1,6 @@
 #include "pci.hpp"
 #include "io.hpp"
-#include "video.hpp"
+#include "utils.hpp"
 
 #include <stdint.h>
 #include <stddef.h>
@@ -46,7 +46,7 @@ namespace PCI {
                     if (!exists(bus, slot, function)) 
                         continue;
 
-                    // kprint("Detected a device on bus %d, slot %d and function %d\n", bus, slot, function);
+                    // log("Detected a device on bus %d, slot %d and function %d\n", bus, slot, function);
 
                 }
             }

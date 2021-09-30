@@ -7,6 +7,7 @@
 #include <stddef.h>
 #include <video.hpp>
 #include <utils.hpp>
+#include <utils.hpp>
 #include <strings.hpp>
 #include <memory.hpp>
 #include <math.hpp>
@@ -16,7 +17,7 @@ namespace Tmpfs {
     //TODO: test and free mem used by the module
     void load(stivale2_struct_tag_modules* module_info) {
         if (module_info->module_count == 0) {
-            Toystar::utils::panic("no modules were loaded");
+            panic("no modules were loaded");
         }
 
         size_t module_size = module_info->modules[0].end - module_info->modules[0].begin;
@@ -39,7 +40,7 @@ namespace Tmpfs {
                     auto fd = tmp_filesystem->open(nullptr, name, Vfs::Modes::CREATE);
 
                     if (fd == nullptr) {
-                        kprint("Could not create file %s\n", name);
+                        log("Could not create file %s\n", name);
                         continue;
                     }
 
@@ -65,14 +66,14 @@ namespace Tmpfs {
                     int res = tmp_filesystem->mkdir(nullptr, name);
 
                     if (res == -1) {
-                        kprint("Could not create directory %s\n", name);
+                        log("Could not create directory %s\n", name);
                     }
 
                     break;
                 }
 
                 default:
-                    Toystar::utils::panic("unsupported file type in init module");
+                    panic("unsupported file type in init module");
                     break;
             }
         }

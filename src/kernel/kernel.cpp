@@ -11,6 +11,7 @@
 #include "pci.hpp"
 #include "drivers/keyboard.hpp"
 #include "drivers/hpet.hpp"
+#include "drivers/serial.hpp"
 #include "scheduler/scheduler.hpp"
 #include <fs/vfs.hpp>
 #include <fs/tmpfs.hpp>
@@ -56,18 +57,19 @@ extern "C" void _start(stivale2_struct* stivale2) {
     stivale2_struct_tag_modules* modules_info;
     modules_info = (stivale2_struct_tag_modules*)get_tag(stivale2, STIVALE2_STRUCT_TAG_MODULES_ID);
 
+    Serial::init();
     video_init(fb_info);
     
-    log("Kernel loaded\n");
+    print("Kernel loaded\n");
 
-    log("Cores: %d\n", smp_info->cpu_count);
+    print("Cores: %d\n", smp_info->cpu_count);
 
     init_gdt();
     load_gdt();
 
     init_idt();
     load_idt();
-    log("IDT and GDT loaded\n");
+    print("IDT and GDT loaded\n");
 
     PMM::init(memmap_info->memmap, memmap_info->entries);
 
@@ -77,7 +79,13 @@ extern "C" void _start(stivale2_struct* stivale2) {
 
     _init();
 
-    log("VMM and PMM initialized\n");
+    print("VMM and PMM initialized\n");
+
+    VMM::vmm* new_vmm = new VMM::vmm(true);
+
+    // new_vmm->map_range_raw(0, 0, 0x100000000, 0b111);
+
+    // log("frames used: %d\n", new_vmm->page_tables_addr.size());
 
     // PCI::enumerateDevices();
 
@@ -88,23 +96,23 @@ extern "C" void _start(stivale2_struct* stivale2) {
 
     Apic::init();
 
-    log("Apic initialized\n");
+    // print("Apic initialized\n");
 
-    log("Free memory: %d KB\n", PMM::get_available_memory()/1024);
+    // print("Free memory: %d KB\n", PMM::get_available_memory()/1024);
 
     Tmpfs::init();
 
     Vfs::mount("tmpfs", "/");
     
-    log("Mounted tmpfs at /\n");
+    // print("Mounted tmpfs at /\n");
     
     Tmpfs::load(modules_info);
 
-    log("Initrd loaded\n");
+    // print("Initrd loaded\n");
 
     Cpu::bootstrap_cores(smp_info);
 
-    log("Initializing scheduler\n");
+    // print("Initializing scheduler\n");
 
     Sched::init();
 

@@ -3,7 +3,6 @@
 #include "vmm.hpp"
 #include <memory.hpp>
 #include <strings.hpp>
-#include <video.hpp>
 #include <utils.hpp>
 #include <lock.hpp>
 
@@ -21,7 +20,7 @@ namespace Heap {
         allocator = (BuddyAllocator*) (PMM::alloc(1) + PHYSICAL_BASE_ADDRESS);
 
         if (!allocator) {
-            Toystar::utils::panic("could not initialize the kernel heap");
+            panic("could not initialize the kernel heap");
         }
 
         new (allocator) BuddyAllocator();
@@ -31,6 +30,11 @@ namespace Heap {
         bucketList = (Block**) (PMM::alloc(1) + PHYSICAL_BASE_ADDRESS);
 
         Block* firstBlock = (Block*) (PMM::alloc(INITIAL_PAGES) + PHYSICAL_BASE_ADDRESS);
+        log("first block addr: %x\n", (uint64_t)firstBlock);
+
+        if (!bucketList || !firstBlock) {
+            panic("could not allocate the resources for the kernel heap");
+        }
 
         bucketList[0] = firstBlock;
         bucketList[0]->size = 1 << MAX_POWER;
@@ -103,12 +107,17 @@ namespace Heap {
         block->next = block2;
         block->size = (1 << order)/2;
         bucketList[index + 1] = block;
+
+        if (order == 8) {
+            log("addr %x from %x\n", (uint64_t) block2, (uint64_t)block);
+            dump_heap();
+        }
     
         return true;
     }
 
     bool BuddyAllocator::try_to_merge(size_t order) {
-        // kprint("MERGING ORDER: %d\n", order);
+        // log("MERGING ORDER: %d\n", order);
 
         if (order > MAX_POWER) {
             return false;
@@ -177,7 +186,7 @@ namespace Heap {
         while ((1 << order) < size) {
             order++;
         }
-
+        
         size_t index = index_from_order(order);
 
         Lock::acquire(&heap_lock);
@@ -199,9 +208,9 @@ namespace Heap {
         bucketList[index] = allocated->next;
 
         allocated->next = nullptr;
-
+        
         Lock::release(&heap_lock);
-
+        // log("order: %d | addr: %x\n", order, (uint64_t)allocated);
         return (void*)allocated + sizeof(Block);
     }
 
@@ -245,6 +254,18 @@ namespace Heap {
 
         kfree(ptr);
         return newPtr;
+    }
+
+    void BuddyAllocator::dump_heap() {
+        for (size_t i = 12; i < 16; i++) {
+            log("ORDER %d: ", MAX_POWER - i);
+            Block* head = bucketList[i];
+            while (head != nullptr) {
+                log("%x ", (uint64_t)head);
+                head = head->next;
+            }
+            log("\n");
+        }
     }
 }
 

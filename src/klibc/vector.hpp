@@ -3,7 +3,6 @@
 
 #include "memory/heap.hpp"
 #include <utils.hpp>
-#include <video.hpp>
 
 #include <stddef.h>
 
@@ -34,8 +33,7 @@ namespace toys {
 
         T& operator[](size_t i) {
             if (i >= m_capacity)  {
-                kprint("cap: %d\n", m_capacity);
-                Toystar::utils::panic("vector out of bounds");
+                panic("vector out of bounds");
             }
 
             return m_data[i];
@@ -70,7 +68,7 @@ namespace toys {
             }
 
             delete[] oldData;
-
+            
             m_capacity = elementAmount;
         }
 

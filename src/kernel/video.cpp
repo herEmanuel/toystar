@@ -90,33 +90,21 @@ void print_char(char c, uint32_t color) {
     increment_cursor_x(10);
 }
 
-void kprint(const char* msg) {
+void print(const char* msg) {
     size_t i = 0;
-
+    
     while (msg[i]) {
         print_char(msg[i], 0xffffff);
         i++;
     }
 }
 
-void kprint(size_t num) {
+void print(size_t num) {
     const char* msg = itoa(num, 16);
-    kprint(msg);
+    print(msg);
 }
 
-void kprint(size_t num, size_t base) {
+void print(size_t num, size_t base) {
     const char* msg = itoa(num, base);
-    kprint(msg);
-}
-
-void log(const char* msg) {
-    print_char('[', 0xF8F0FB);
-    print_char('I', 0x6320EE);
-    print_char('N', 0x6320EE);
-    print_char('F', 0x6320EE);
-    print_char('O', 0x6320EE);
-    print_char(']', 0xF8F0FB);
-    print_char(' ', 0x0);
-
-    kprint(msg);
+    print(msg);
 }

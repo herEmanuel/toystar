@@ -1,11 +1,12 @@
 #include "idt.hpp"
 #include "cpu.hpp"
-#include <stdint.h>
-#include <stddef.h>
 #include <video.hpp>
 #include <memory.hpp>
 #include <x86_64/apic.hpp>
 #include <x86_64/cpu.hpp>
+
+#include <stdint.h>
+#include <stddef.h>
 
 extern "C" {
 
@@ -57,27 +58,27 @@ void load_idt() {
 extern "C" {
 
     void isr_div_by_zero(interrupt_frame* iframe) {
-        kprint("Division by zero!");
+        print("Division by zero!");
         
         Cpu::hang();
     }
 
     void isr_breakpoint(interrupt_frame* iframe) {
-        kprint("Breakpoint");
+        print("Breakpoint");
         
         Cpu::hang();
     }
 
     void isr_double_fault(interrupt_frame* iframe) {
-        kprint("Double fault!");
+        print("Double fault!");
         
         Cpu::hang();
     }
 
     void isr_general_protection(interrupt_frame* iframe) {
-        kprint("General protection exception!");
+        print("General protection exception!");
 
-        kprint("Error code: %x\n", iframe->error_code);
+        print("Error code: %x\n", iframe->error_code);
 
         Cpu::hang();
     }

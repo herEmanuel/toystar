@@ -19,7 +19,7 @@ namespace Heap {
         Block* next;
         uint16_t reserved;
     };
-
+    
     class BuddyAllocator {
         Block** bucketList;
         uint64_t baseAddr;
@@ -35,6 +35,7 @@ namespace Heap {
         void* kmalloc(size_t bytes);
         void kfree(void* ptr);
         void* krealloc(void* ptr, size_t bytes);
+        void dump_heap();
     };
 
 }

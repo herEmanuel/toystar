@@ -1,7 +1,7 @@
 #include "vmm.hpp"
 #include "pmm.hpp"
+#include <utils.hpp>
 #include <video.hpp>
-#include <strings.hpp>
 #include <x86_64/idt.hpp>
 #include <memory/heap.hpp>
 
@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <math.hpp>
 #include <memory.hpp>
+#include <strings.hpp>
 
 extern "C" void _isr_page_fault();
 
@@ -44,6 +45,10 @@ namespace VMM {
         m_pml4[511] = kernel_vmm->m_pml4[511];
     }
 
+    vmm::~vmm() {
+        delete m_pml4;
+    } 
+
     uint64_t* vmm::get_next_level(uint64_t* currLevelPtr, uint16_t entry) {
         if (!((uint64_t)currLevelPtr & PHYSICAL_BASE_ADDRESS)) {
             currLevelPtr += PHYSICAL_BASE_ADDRESS / sizeof(uint64_t);
@@ -53,6 +58,8 @@ namespace VMM {
             uint64_t allocated = (uint64_t) PMM::alloc(1);
             currLevelPtr[entry] = allocated | 0b111;
 
+            page_tables_addr.push_back((uint64_t*)allocated);
+
             return (uint64_t*) (allocated + PHYSICAL_BASE_ADDRESS); 
         }
     
@@ -60,12 +67,13 @@ namespace VMM {
     }
 
     void vmm::map_page(uint64_t virt, uint64_t phys, uint16_t flags) {
+        // log("a");
         uint16_t pml4e, pdpe, pde, pte;
 
-        pml4e = ((virt >> 39) & 0x1FF);
-        pdpe = ((virt >> 30) & 0x1FF);
-        pde = ((virt >> 21) & 0x1FF);
-        pte = ((virt >> 12) & 0x1FF);
+        pml4e = get_pml4e(virt);
+        pdpe  = get_pdpe(virt);
+        pde   = get_pde(virt);
+        pte   = get_pte(virt);
         
         uint64_t* pdp = get_next_level(m_pml4, pml4e);
         uint64_t* pd = get_next_level(pdp, pdpe);
@@ -94,10 +102,10 @@ namespace VMM {
     uint64_t vmm::virtual_to_physical(uint64_t virt) {
         uint16_t pml4e, pdpe, pde, pte;
         
-        pml4e = ((virt >> 39) & 0x1FF);
-        pdpe = ((virt >> 30) & 0x1FF);
-        pde = ((virt >> 21) & 0x1FF);
-        pte = ((virt >> 12) & 0x1FF);
+        pml4e = get_pml4e(virt);
+        pdpe  = get_pdpe(virt);
+        pde   = get_pde(virt);
+        pte   = get_pte(virt);
 
         uint64_t* pdp = get_next_level(m_pml4, pml4e);
         uint64_t* pd = get_next_level(pdp, pdpe);
@@ -127,10 +135,10 @@ namespace VMM {
         for (size_t i = 0; i < m_ranges.size(); i++) {
             MemArea* range = m_ranges[i];
 
-            size_t page_number = DIV_CEIL(range->limit, PAGE_SIZE);
+            size_t page_amount = DIV_CEIL(range->limit, PAGE_SIZE);
             uint64_t base = range->base & ~(4095);
 
-            for (size_t t = 0; t < page_number; t++) {
+            for (size_t t = 0; t < page_amount; t++) {
                 void* addr = PMM::alloc(1);
                 void* src = (void*)(base + t*PAGE_SIZE);
 
@@ -147,6 +155,24 @@ namespace VMM {
         }
 
         return new_pagemap;
+    }
+
+    void vmm::destroy() {
+        for (size_t i = 0; i < m_ranges.size(); i++) {
+            MemArea* range = m_ranges[i];
+            size_t page_amount = DIV_CEIL(range->limit, PAGE_SIZE);
+
+            void* physical_addr = (void*) virtual_to_physical(range->base);
+            PMM::free(physical_addr, page_amount);
+
+            delete range;
+        }
+
+        // for (size_t i = 0; i < page_tables_addr.size(); i++) {
+        //     PMM::free(page_tables_addr[i], 1);
+        // // }
+
+        this->~vmm();
     }
 
     void vmm::switch_pagemap() {
@@ -170,14 +196,14 @@ namespace VMM {
 }
 
 extern "C" void isr_page_fault(interrupt_frame* iframe) {
-    kprint("Page fault!");
+    print("Page fault!");
 
-    kprint("Error code: %d\n", iframe->error_code);
+    print("Error code: %d\n", iframe->error_code);
 
     uint64_t cr2;
     asm volatile("movq %%cr2, %0" : "=r"(cr2));
 
-    kprint("CR2: %x\n", cr2);
+    print("CR2: %x\n", cr2);
 
     while(true)
         asm("hlt");

@@ -68,7 +68,7 @@ namespace Cpu {
         }
 
         while(cpus != smpInfo->cpu_count);
-        log("All cores have been initialized\n");
+        print("All cores have been initialized\n");
     }
 
     void core_init(stivale2_smp_info* smpInfo) {     

@@ -28,13 +28,15 @@ namespace toys {
 
     namespace Bitmap {
 
-        inline size_t allocate(uint8_t* bitmap) {
+        inline int64_t allocate(uint8_t* bitmap) {
             for (size_t i = 0; i < sizeof(bitmap) * 8; i++) {
                 if (is_bit_set(bitmap, i)) { continue; }
 
                 set_bit(bitmap, i);
                 return i;
             }
+
+            return -1;
         }
         
     }
