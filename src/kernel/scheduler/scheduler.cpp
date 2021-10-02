@@ -291,7 +291,7 @@ void syscall_fork(context* regs) {
     Lock::acquire(&sched_lock);
     process_list.push_back(child);
     Lock::release(&sched_lock);
-    allocator->dump_heap();
+    // allocator->dump_heap();
 
     child->pid = Sched::get_new_pid();
 
@@ -299,6 +299,7 @@ void syscall_fork(context* regs) {
     child->process_directory = parent->process_directory;
     
     child->pagemap = parent->pagemap->duplicate();
+    // allocator->dump_heap();
     
     for (size_t i = 0; i < parent->fd_list.size(); i++) {
         auto fd = new Vfs::file_description;
@@ -306,25 +307,30 @@ void syscall_fork(context* regs) {
 
         child->fd_list.push_back(fd);
     }
+    // allocator->dump_heap();
+
     Sched::thread* main_thread = new Sched::thread;
     log("thread addr: %x\n", (uint64_t)main_thread);
-    allocator->dump_heap();
+    // allocator->dump_heap();
     main_thread->regs = new context;
 
     int64_t new_tid = Sched::get_new_tid();
     if (new_tid == -1) {
         regs->rax = -1;
     }
+    // allocator->dump_heap();
 
     main_thread->tid = new_tid;
     main_thread->status = Sched::Status::Waiting;
     main_thread->parent_process = child;
+    // allocator->dump_heap();
 
     memcpy(main_thread->regs, regs, sizeof(context));
     main_thread->regs->rax = 0;
+    // allocator->dump_heap();
 
     child->threads.push_back(main_thread);
-    allocator->dump_heap();
+    // allocator->dump_heap();
     Sched::queue(main_thread);
 
     regs->rax = child->pid;

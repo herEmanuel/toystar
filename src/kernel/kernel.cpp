@@ -83,9 +83,9 @@ extern "C" void _start(stivale2_struct* stivale2) {
 
     VMM::vmm* new_vmm = new VMM::vmm(true);
 
-    // new_vmm->map_range_raw(0, 0, 0x100000000, 0b111);
+    new_vmm->map_range_raw(0, 0, 0x100000000, 0b111);
 
-    // log("frames used: %d\n", new_vmm->page_tables_addr.size());
+    log("frames used: %d\n", new_vmm->page_tables_addr.size());
 
     // PCI::enumerateDevices();
 
@@ -96,23 +96,23 @@ extern "C" void _start(stivale2_struct* stivale2) {
 
     Apic::init();
 
-    // print("Apic initialized\n");
+    print("Apic initialized\n");
 
-    // print("Free memory: %d KB\n", PMM::get_available_memory()/1024);
+    print("Free memory: %d KB\n", PMM::get_available_memory()/1024);
 
     Tmpfs::init();
 
     Vfs::mount("tmpfs", "/");
     
-    // print("Mounted tmpfs at /\n");
+    print("Mounted tmpfs at /\n");
     
     Tmpfs::load(modules_info);
 
-    // print("Initrd loaded\n");
+    print("Initrd loaded\n");
 
     Cpu::bootstrap_cores(smp_info);
 
-    // print("Initializing scheduler\n");
+    print("Initializing scheduler\n");
 
     Sched::init();
 

@@ -30,7 +30,6 @@ namespace Heap {
         bucketList = (Block**) (PMM::alloc(1) + PHYSICAL_BASE_ADDRESS);
 
         Block* firstBlock = (Block*) (PMM::alloc(INITIAL_PAGES) + PHYSICAL_BASE_ADDRESS);
-        log("first block addr: %x\n", (uint64_t)firstBlock);
 
         if (!bucketList || !firstBlock) {
             panic("could not allocate the resources for the kernel heap");
@@ -107,18 +106,11 @@ namespace Heap {
         block->next = block2;
         block->size = (1 << order)/2;
         bucketList[index + 1] = block;
-
-        if (order == 8) {
-            log("addr %x from %x\n", (uint64_t) block2, (uint64_t)block);
-            dump_heap();
-        }
     
         return true;
     }
 
     bool BuddyAllocator::try_to_merge(size_t order) {
-        // log("MERGING ORDER: %d\n", order);
-
         if (order > MAX_POWER) {
             return false;
         }
@@ -142,13 +134,14 @@ namespace Heap {
                     if (*p == curr) {
                         *p = buddyBlock->next;
                         buddyBlock = buddyBlock->next;
+                        
                         continue;
                     }
 
-                    buddyBlock = buddyBlock->next;
                     p = &buddyBlock->next;
+                    buddyBlock = buddyBlock->next;
                 }
-                
+               
                 *p = buddyBlock->next;
 
                 Block* block = curr;
@@ -210,7 +203,7 @@ namespace Heap {
         allocated->next = nullptr;
         
         Lock::release(&heap_lock);
-        // log("order: %d | addr: %x\n", order, (uint64_t)allocated);
+        
         return (void*)allocated + sizeof(Block);
     }
 
