@@ -5,11 +5,12 @@
 #include <fs/files.hpp>
 #include "cpu.hpp"
 #include <utils.hpp>
+#include <video.hpp>
 
 typedef void (*syscall)(context* regs);
 
 void syscall_print(context* regs) {
-    log("%s\n", (const char*)regs->rdi);
+    print("%s\n", (const char*)regs->rdi);
 }
 
 syscall syscall_list[] = {

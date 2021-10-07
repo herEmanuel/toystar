@@ -34,25 +34,22 @@ Sched::process* init_process = nullptr;
 
 void init_proc() {
     log("Main process started\n");
-    Sched::start_program("/hello.elf", nullptr);
+    Sched::process* proc = Sched::create_program("/hello.elf", nullptr);
+    Sched::queue(proc->threads[0]);
 
-    // int64_t res;
-    // asm volatile("mov $0x8, %rax");
-    // asm volatile("int $0x80" ::: "rax");
-    // asm volatile("mov %%rax, %0" : "=r"(res));
-    // log("res: %d\n", res);
-    // if (res == 0) {
-    //     log("nothing\n");
-    //     // while(true) {
-    //     //     log("CHILD PROCESS YOOO\n");
-    //     //     Hpet::sleep(500);
-    //     // }
-    // } else {
-    //     while(true) {
-    //         log("PARENT PROCESS!! %d\n", res);
-    //         Hpet::sleep(500);
-    //     }
-    // }
+    cpu* current = Cpu::local_core();
+    log("hm here\n");
+    const char* args[] = { "teste", "potato", "hello!", NULL };
+    Sched::process* start = Sched::create_program("/test.elf", args);
+    log("passed??\n");
+    if (start == nullptr) {
+        log("oh fuck smth went wrong");
+    }
+
+    start->pid = 54;
+    Sched::queue(start->threads[0]);
+
+    // Sched::exit_process();
 
     Cpu::hang();
 }
@@ -64,8 +61,9 @@ namespace Sched {
         tid_bitmap = reinterpret_cast<uint8_t*>(PMM::alloc(1) + PHYSICAL_BASE_ADDRESS);
 
         init_process = create_process((uint64_t)&init_proc, 0x8, VMM::kernel_vmm, nullptr);
+        
         queue(init_process->threads[0]);
-   
+    
         Apic::localApic->calibrate_timer(500);
     }
 
@@ -87,7 +85,7 @@ namespace Sched {
 
     process* create_process(uint64_t rip, uint64_t cs, VMM::vmm* pagemap, Vfs::fs_node* dir) {
         process* new_process = new process;
-
+        
         new_process->status = Status::Waiting;
         new_process->pagemap = pagemap;
         new_process->process_directory = dir;
@@ -104,7 +102,7 @@ namespace Sched {
         if (cs & 0x3) {
             //userland process
             pagemap->map_range(USER_STACK, stack, USER_STACK_SIZE, 0b111, 0);
-
+            
             main_thread->regs->rsp = USER_STACK + USER_STACK_SIZE;
             main_thread->regs->ss = 0x20 | 0x3; // | 0x3 sets the RPL
         } else {
@@ -118,8 +116,6 @@ namespace Sched {
         main_thread->regs->cs = cs;
         new_process->threads.push_back(main_thread);
 
-        Lock::acquire(&sched_lock);
-
         int64_t new_pid = get_new_pid(); 
         int64_t new_tid = get_new_tid(); 
 
@@ -131,6 +127,8 @@ namespace Sched {
         main_thread->tid = new_tid;
         main_thread->parent_process = new_process;
 
+        Lock::acquire(&sched_lock);
+
         process_list.push_back(new_process);
 
         Lock::release(&sched_lock);
@@ -138,11 +136,56 @@ namespace Sched {
         return new_process;  
     }
 
-    //still lacks some stuff
-    bool start_program(const char* path, const char** argv) {
+    bool exit_process() {
+        cpu* current_core = Cpu::local_core();
+
+        Sched::process* proc = current_core->running_process;
+
+        Lock::acquire(&sched_lock);
+
+        for (size_t i = 0; i < process_list.size(); i++) {
+            if (process_list[i]->pid == proc->pid) 
+                process_list.erase(i);
+        }
+
+        //thats gonna be slow af
+        for (size_t i = 0; i < proc->threads.size(); i++) {
+            if (proc->threads[i]->status == Sched::Status::Running) {
+                __atomic_store_n(&proc->threads[i]->status, Sched::Status::Dying, __ATOMIC_RELAXED);
+
+                Lock::release(&sched_lock);
+                
+                while (proc->threads[i]->status != Sched::Status::Dead);
+
+                Lock::acquire(&sched_lock);
+            }
+
+            for (size_t t = 0; t < waiting_queue.size(); t++) {
+                if (waiting_queue[t]->tid == proc->threads[i]->tid)
+                    waiting_queue.erase(t);
+            }
+
+            toys::clear_bit(tid_bitmap, proc->threads[i]->tid);
+            delete proc->threads[i];
+        }
+
+        Lock::release(&sched_lock);
+
+        for (size_t i = 0; i < proc->fd_list.size(); i++) {
+            delete proc->fd_list[i];
+        }
+
+        toys::clear_bit(pid_bitmap, proc->pid);
+        delete proc;
+
+        current_core->running_thread = nullptr;
+        current_core->running_process = nullptr;
+    }
+
+    process* create_program(const char* path, const char** argv) {
         auto fd = Vfs::open(path, 0);
         if (fd == nullptr) {
-            return false;
+            return nullptr;
         }
 
         VMM::vmm* pagemap = new VMM::vmm(true);
@@ -150,12 +193,35 @@ namespace Sched {
         int64_t rip = Loader::Elf::load(pagemap, fd->file);
 
         process* proc = create_process(rip, 0x1b, pagemap, fd->file->parent); //always userland program?
+        uint64_t old_rsp = pagemap->virtual_to_physical(proc->threads[0]->regs->rsp) 
+                                        + PHYSICAL_BASE_ADDRESS;
+
+        uint64_t* rsp = (uint64_t*) old_rsp;
 
         delete fd;
 
-        queue(proc->threads[0]);
+        if (argv == nullptr)   
+            return proc;
+
+        //push the arguments to the new process's stack
+        //TODO: envp
+        size_t argc = 0;
+        const char** arg = argv;
+       
+        while (*arg != NULL) {
+            argc++;
+            arg++;
+        }
         
-        return true;
+        for (size_t i = argc; i > 0; --i) {
+            *(--rsp) = (uint64_t) argv[i];
+        }
+        
+        *(--rsp) = argc;
+        
+        proc->threads[0]->regs->rsp -= old_rsp - (uint64_t) rsp; //points to argc
+
+        return proc;
     }
 
     void queue(thread* thread_to_queue) {
@@ -175,33 +241,45 @@ namespace Sched {
         thread* scheduled_thread = (queue_obj != nullptr) ? *queue_obj : nullptr;
        
         if (scheduled_thread == nullptr) {
-            if (current_core->running_thread != nullptr) {
+            if (current_core->running_thread != nullptr
+                && current_core->running_thread->status != Status::Dying) {
                 scheduled_thread = current_core->running_thread;
             } else {
+                if (current_core->running_thread->status == Status::Dying) {
+                    current_core->running_thread->status = Status::Dead;
+                }
+
                 Lock::release(&sched_lock);
                 Apic::localApic->eoi();
                 return;
             }
         }   
         
-        if (current_core->running_thread != nullptr && current_core->running_thread != scheduled_thread) {
+        if (current_core->running_thread != nullptr 
+            && current_core->running_thread != scheduled_thread) {
             thread* previous_thread = current_core->running_thread;
             
-            previous_thread->status = Status::Waiting;
-            previous_thread->regs = regs;
+            if (previous_thread->status != Status::Dying) {
 
-            process* previous_process = current_core->running_process;
-            previous_process->status = Status::Waiting;
+                previous_thread->status = Status::Waiting;
+                previous_thread->regs = regs;
 
-            for (size_t i = 0; i < previous_process->threads.size(); i++) {
-                if (previous_process->threads[i] != nullptr 
-                    && previous_process->threads[i]->status == Status::Running) 
-                    {
-                        previous_process->status = Status::Running;
-                    }
+                process* previous_process = current_core->running_process;
+                previous_process->status = Status::Waiting;
+
+                for (size_t i = 0; i < previous_process->threads.size(); i++) {
+                    if (previous_process->threads[i] != nullptr 
+                        && previous_process->threads[i]->status == Status::Running) 
+                        {
+                            previous_process->status = Status::Running;
+                        }
+                }
+
+                waiting_queue.push(previous_thread);
+
+            } else {
+                previous_thread->status = Status::Dead;
             }
-
-            waiting_queue.push(previous_thread);
         }
         
         process* parent_process = scheduled_thread->parent_process;
@@ -237,47 +315,7 @@ void syscall_gettid(context* regs) {
 }
 
 void syscall_exit(context* regs) {
-    cpu* current_core = Cpu::local_core();
-
-    Lock::acquire(&sched_lock);
-
-    Sched::process* proc = current_core->running_process;
-    
-    for (size_t i = 0; i < process_list.size(); i++) {
-        if (process_list[i]->pid == proc->pid) 
-            process_list.erase(i);
-    }
-    
-    for (size_t i = 0; i < proc->fd_list.size(); i++) {
-        delete proc->fd_list[i];
-    }
-
-    uint64_t stack_addr = proc->pagemap->virtual_to_physical(USER_STACK);
-    PMM::free((void*)stack_addr, USER_STACK_SIZE/PAGE_SIZE);
-    
-    //TODO: delete user pagemap
-
-    //thats gonna be slow af
-    for (size_t i = 0; i < proc->threads.size(); i++) {
-        if (proc->threads[i]->status == Sched::Status::Running) 
-            continue;
-
-        for (size_t t = 0; t < waiting_queue.size(); t++) {
-            if (waiting_queue[t]->tid == proc->threads[i]->tid)
-                waiting_queue.erase(t);
-        }
-
-        toys::clear_bit(tid_bitmap, proc->threads[i]->tid);
-        delete proc->threads[i];
-    }
-
-    toys::clear_bit(pid_bitmap, proc->pid);
-    delete proc;
-
-    Lock::release(&sched_lock);
-
-    current_core->running_thread = nullptr;
-    current_core->running_process = nullptr;
+    Sched::exit_process();
  
     Cpu::hang();
 }
@@ -291,7 +329,6 @@ void syscall_fork(context* regs) {
     Lock::acquire(&sched_lock);
     process_list.push_back(child);
     Lock::release(&sched_lock);
-    // allocator->dump_heap();
 
     child->pid = Sched::get_new_pid();
 
@@ -299,7 +336,6 @@ void syscall_fork(context* regs) {
     child->process_directory = parent->process_directory;
     
     child->pagemap = parent->pagemap->duplicate();
-    // allocator->dump_heap();
     
     for (size_t i = 0; i < parent->fd_list.size(); i++) {
         auto fd = new Vfs::file_description;
@@ -307,37 +343,49 @@ void syscall_fork(context* regs) {
 
         child->fd_list.push_back(fd);
     }
-    // allocator->dump_heap();
 
     Sched::thread* main_thread = new Sched::thread;
-    log("thread addr: %x\n", (uint64_t)main_thread);
-    // allocator->dump_heap();
+    
     main_thread->regs = new context;
 
     int64_t new_tid = Sched::get_new_tid();
     if (new_tid == -1) {
         regs->rax = -1;
     }
-    // allocator->dump_heap();
 
     main_thread->tid = new_tid;
     main_thread->status = Sched::Status::Waiting;
     main_thread->parent_process = child;
-    // allocator->dump_heap();
 
     memcpy(main_thread->regs, regs, sizeof(context));
     main_thread->regs->rax = 0;
-    // allocator->dump_heap();
 
     child->threads.push_back(main_thread);
-    // allocator->dump_heap();
     Sched::queue(main_thread);
 
     regs->rax = child->pid;
 }
 
-// void syscall_execve(context* regs) {
-//     cpu* current = Cpu::local_core();
+//bad
+void syscall_execve(context* regs) {
+    cpu* current = Cpu::local_core();
 
-    
-// }
+    Sched::process* proc = current->running_process;
+
+    const char* path = (const char*) regs->rdi;
+    const char** argv = (const char**) regs->rsi;
+    // const char** envp = (const char**) regs->rdx; 
+
+    Sched::process* start = Sched::create_program(path, argv);
+
+    if (start == nullptr) {
+        regs->rax = -1;
+        return;
+    }
+
+    start->pid = proc->pid;
+    Sched::queue(start->threads[0]);
+
+    Sched::exit_process();
+    Cpu::hang();
+}

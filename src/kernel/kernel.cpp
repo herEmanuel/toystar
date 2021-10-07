@@ -81,12 +81,6 @@ extern "C" void _start(stivale2_struct* stivale2) {
 
     print("VMM and PMM initialized\n");
 
-    VMM::vmm* new_vmm = new VMM::vmm(true);
-
-    new_vmm->map_range_raw(0, 0, 0x100000000, 0b111);
-
-    log("frames used: %d\n", new_vmm->page_tables_addr.size());
-
     // PCI::enumerateDevices();
 
     Acpi::init(rsdp);

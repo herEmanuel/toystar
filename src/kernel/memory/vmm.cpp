@@ -19,22 +19,17 @@ namespace VMM {
 
     void init() {
         kernel_vmm = new vmm();
-        log("here\n");
-        for (size_t i = 0; i < 0x100000000; i += PAGE_SIZE) {
-            kernel_vmm->map_page(PHYSICAL_BASE_ADDRESS+i, i, 0b11);
-        }
-        // kernel_vmm->map_range_raw(PHYSICAL_BASE_ADDRESS, 0, 0x100000000, 0b11);
-        log("here\n");
-        kernel_vmm->map_range_raw(0, 0, 0x100000000, 0b11);
-        log("here\n");
-        kernel_vmm->map_range_raw(KERNEL_BASE, 0, 0x80000000, 0b11);
-        log("here\n");
+    
+        uint64_t pml4;
+
+        asm volatile("mov %%cr3, %0" : "=r"(pml4));
+
+        kernel_vmm->set_pml4((pml4 + PHYSICAL_BASE_ADDRESS));
 
         register_interrupt_handler(0xE, (uint64_t)&_isr_page_fault, 0x8E, 0);
     }
 
     vmm::vmm() {
-        m_pml4 = (uint64_t*) (PMM::alloc(1) + PHYSICAL_BASE_ADDRESS);
     }
 
     vmm::vmm(bool non_default) {
@@ -52,7 +47,6 @@ namespace VMM {
     } 
 
     uint64_t* vmm::get_next_level(uint64_t* currLevelPtr, uint16_t entry) {
-        log("next level ");
         if (!((uint64_t)currLevelPtr & PHYSICAL_BASE_ADDRESS)) {
             currLevelPtr += PHYSICAL_BASE_ADDRESS / sizeof(uint64_t);
         }
@@ -70,7 +64,6 @@ namespace VMM {
     }
 
     void vmm::map_page(uint64_t virt, uint64_t phys, uint16_t flags) {
-        log("map page ");
         uint16_t pml4e, pdpe, pde, pte;
 
         pml4e = get_pml4e(virt);
@@ -86,7 +79,7 @@ namespace VMM {
     }
 
     void vmm::map_range_raw(uint64_t virt, uint64_t phys, size_t length, size_t prot) {
-        for (size_t i = 0; i < length; i += PAGE_SIZE) {
+        for (size_t i = 0; i <= length; i += PAGE_SIZE) {
             map_page(virt+i, phys+i, prot);
         }
     }
@@ -97,7 +90,7 @@ namespace VMM {
     }
 
     void vmm::unmap_range_raw(uint64_t virt, size_t length) {
-        for (size_t i = 0; i < length; i += PAGE_SIZE) {
+        for (size_t i = 0; i <= length; i += PAGE_SIZE) {
             unmap_page(virt+i);
         }
     }
@@ -109,12 +102,12 @@ namespace VMM {
         pdpe  = get_pdpe(virt);
         pde   = get_pde(virt);
         pte   = get_pte(virt);
-
+        
         uint64_t* pdp = get_next_level(m_pml4, pml4e);
         uint64_t* pd = get_next_level(pdp, pdpe);
         uint64_t* pt = get_next_level(pd, pde);
         
-        uint64_t phys = (pt[pte] & 0xfffffffffffff000);
+        uint64_t phys = pt[pte] & 0xfffffffffffff000;
         
         return phys;
     }

@@ -38,7 +38,9 @@ namespace Sched {
 
     enum Status {
         Waiting, 
-        Running
+        Running,
+        Dying,
+        Dead
     };
 
     extern "C" {
@@ -49,7 +51,8 @@ namespace Sched {
     void init();
     void queue(thread* thread_to_queue);
     process* create_process(uint64_t rip, uint64_t cs, VMM::vmm* pagemap, Vfs::fs_node* dir);
-    bool start_program(const char* path, const char** argv);
+    bool exit_process();
+    process* create_program(const char* path, const char** argv);
 
 }
 
