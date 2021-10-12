@@ -9,7 +9,8 @@ namespace Vfs {
     enum FileType {
         File,
         Directory,
-        Symlink
+        Symlink,
+        Device
     };
 
     enum Modes {

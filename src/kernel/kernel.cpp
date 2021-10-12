@@ -15,6 +15,7 @@
 #include "scheduler/scheduler.hpp"
 #include <fs/vfs.hpp>
 #include <fs/tmpfs.hpp>
+#include <fs/devfs.hpp>
 #include <fs/inittmpfs.hpp>
 
 #include <stdint.h>
@@ -95,8 +96,10 @@ extern "C" void _start(stivale2_struct* stivale2) {
     print("Free memory: %d KB\n", PMM::get_available_memory()/1024);
 
     Tmpfs::init();
+    Devfs::init();
 
     Vfs::mount("tmpfs", "/");
+    Vfs::mount("devfs", "/dev");
     
     print("Mounted tmpfs at /\n");
     
