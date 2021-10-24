@@ -1,5 +1,6 @@
 #include "files.hpp"
 #include "vfs.hpp"
+#include <utils.hpp>
 #include <x86_64/cpu.hpp>
 #include <scheduler/scheduler.hpp>
 
@@ -64,7 +65,7 @@ void syscall_write(context* regs) {
         regs->rax = -1;
         return;
     }
-
+    
     regs->rax = Vfs::write(fd->file, fd->offset, regs->rdx, (char*)regs->rsi);
     fd->offset += regs->rdx;
 }

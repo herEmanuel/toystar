@@ -38,18 +38,13 @@ void init_proc() {
     Sched::queue(proc->threads[0]);
 
     cpu* current = Cpu::local_core();
-    log("hm here\n");
-    const char* args[] = { "teste", "potato", "hello!", NULL };
+
+    const char* args[] = { "test", "potato", "hello!", NULL };
     Sched::process* start = Sched::create_program("/test.elf", args);
-    log("passed??\n");
-    if (start == nullptr) {
-        log("oh fuck smth went wrong");
-    }
 
     start->pid = 54;
+    start->threads[0]->tid = 23;
     Sched::queue(start->threads[0]);
-
-    // Sched::exit_process();
 
     Cpu::hang();
 }
@@ -81,6 +76,26 @@ namespace Sched {
         Lock::release(&tid_lock);
         
         return tid;
+    }
+
+    void dump_registers(context* regs) {
+        log("RIP: %x\n", regs->rip);
+        log("RAX: %x\n", regs->rax);
+        log("RBX: %x\n", regs->rbx);
+        log("RCX: %x\n", regs->rcx);
+        log("RDX: %x\n", regs->rdx);
+        log("RDI: %x\n", regs->rdi);
+        log("RSI: %x\n", regs->rsi);
+        log("RBP: %x\n", regs->rbp);
+        log("RSP: %x\n", regs->rsp);
+        log("R8: %x\n", regs->r8);
+        log("R9: %x\n", regs->r9);
+        log("R10: %x\n", regs->r10);
+        log("R11: %x\n", regs->r11);
+        log("R12: %x\n", regs->r12);
+        log("R13: %x\n", regs->r13);
+        log("R14: %x\n", regs->r14);
+        log("R15: %x\n", regs->r15);
     }
 
     process* create_process(uint64_t rip, uint64_t cs, VMM::vmm* pagemap, Vfs::fs_node* dir) {
@@ -127,6 +142,14 @@ namespace Sched {
         main_thread->tid = new_tid;
         main_thread->parent_process = new_process;
 
+        auto stdin = Vfs::open("/dev/tty0", Vfs::Modes::WRITE);
+        auto stdout = Vfs::open("/dev/tty0", Vfs::Modes::READ);
+        auto stderr = Vfs::open("/dev/tty0", Vfs::Modes::WRITE);
+
+        new_process->fd_list.push_back(stdin);
+        new_process->fd_list.push_back(stdout);
+        new_process->fd_list.push_back(stderr);
+
         Lock::acquire(&sched_lock);
 
         process_list.push_back(new_process);
@@ -137,49 +160,65 @@ namespace Sched {
     }
 
     bool exit_process() {
+        log("exiting\n");
         cpu* current_core = Cpu::local_core();
-
+        
         Sched::process* proc = current_core->running_process;
-
+        
         Lock::acquire(&sched_lock);
-
+        
         for (size_t i = 0; i < process_list.size(); i++) {
             if (process_list[i]->pid == proc->pid) 
                 process_list.erase(i);
         }
 
-        //thats gonna be slow af
         for (size_t i = 0; i < proc->threads.size(); i++) {
-            if (proc->threads[i]->status == Sched::Status::Running) {
-                __atomic_store_n(&proc->threads[i]->status, Sched::Status::Dying, __ATOMIC_RELAXED);
 
-                Lock::release(&sched_lock);
-                
-                while (proc->threads[i]->status != Sched::Status::Dead);
+            /* 
+                if the thread is running on another core, we must wait for it to stop
+                so that we can safely free its resources
+             */
 
-                Lock::acquire(&sched_lock);
-            }
+            if (proc->threads[i]->tid != current_core->running_thread->tid) {
 
-            for (size_t t = 0; t < waiting_queue.size(); t++) {
-                if (waiting_queue[t]->tid == proc->threads[i]->tid)
-                    waiting_queue.erase(t);
+                if (proc->threads[i]->status == Sched::Status::Running) {
+                    __atomic_store_n(&proc->threads[i]->status, Sched::Status::Dying, __ATOMIC_RELAXED);
+                    
+                    Lock::release(&sched_lock);
+                    
+                    while (proc->threads[i]->status != Sched::Status::Dead);
+                    
+                    Lock::acquire(&sched_lock);
+                } else {
+                    for (size_t t = 0; t < waiting_queue.size(); t++) {
+                        if (waiting_queue[t]->tid == proc->threads[i]->tid)
+                            waiting_queue.erase(t);
+                    }
+                }
+
             }
 
             toys::clear_bit(tid_bitmap, proc->threads[i]->tid);
+            delete proc->threads[i]->regs;
             delete proc->threads[i];
         }
 
         Lock::release(&sched_lock);
-
+        
         for (size_t i = 0; i < proc->fd_list.size(); i++) {
             delete proc->fd_list[i];
         }
-
+        
         toys::clear_bit(pid_bitmap, proc->pid);
+
+        VMM::kernel_vmm->switch_pagemap();
+        proc->pagemap->destroy();
+        
         delete proc;
 
         current_core->running_thread = nullptr;
         current_core->running_process = nullptr;
+        log("exited\n");
     }
 
     process* create_program(const char* path, const char** argv) {
@@ -220,7 +259,6 @@ namespace Sched {
         *(--rsp) = argc;
         
         proc->threads[0]->regs->rsp -= old_rsp - (uint64_t) rsp; //points to argc
-
         return proc;
     }
 
@@ -233,36 +271,50 @@ namespace Sched {
     }
 
     extern "C" void reschedule(context* regs) {
+        log("RESCHEDULE\n");
         cpu* current_core = Cpu::local_core();
         
         Lock::acquire(&sched_lock);
+
+        if (current_core->running_thread != nullptr) {
+            log("----------------------------------------\n");
+            log("THREAD TID: %d\n", current_core->running_thread->tid);
+            dump_registers(current_core->running_thread->regs);
+            log("----------------------------------------\n");
+        }
+
+        for (size_t i = 0; i < waiting_queue.size(); i++) {
+            log("----------------------------------------\n");
+            log("THREAD TID: %d\n", waiting_queue[i]->tid);
+            dump_registers(waiting_queue[i]->regs);
+            log("----------------------------------------\n");
+        }
         
         auto queue_obj = waiting_queue.pop().value();
         thread* scheduled_thread = (queue_obj != nullptr) ? *queue_obj : nullptr;
-       
+    
         if (scheduled_thread == nullptr) {
             if (current_core->running_thread != nullptr
                 && current_core->running_thread->status != Status::Dying) {
                 scheduled_thread = current_core->running_thread;
+                memcpy(scheduled_thread->regs, regs, sizeof(context));
             } else {
-                if (current_core->running_thread->status == Status::Dying) {
+                if (current_core->running_thread->status == Status::Dying) 
                     current_core->running_thread->status = Status::Dead;
-                }
-
+                
                 Lock::release(&sched_lock);
                 Apic::localApic->eoi();
                 return;
             }
         }   
-        
+        log("scheduled tid: %d\n", scheduled_thread->tid);
         if (current_core->running_thread != nullptr 
             && current_core->running_thread != scheduled_thread) {
             thread* previous_thread = current_core->running_thread;
             
             if (previous_thread->status != Status::Dying) {
-
                 previous_thread->status = Status::Waiting;
-                previous_thread->regs = regs;
+                memcpy(previous_thread->regs, regs, sizeof(context));
 
                 process* previous_process = current_core->running_process;
                 previous_process->status = Status::Waiting;
@@ -288,7 +340,7 @@ namespace Sched {
         scheduled_thread->status = Status::Running;
         
         Lock::release(&sched_lock);
-    
+        
         current_core->running_thread = scheduled_thread;
         current_core->running_process = parent_process;
         current_core->pagemap = parent_process->pagemap;
@@ -297,7 +349,8 @@ namespace Sched {
         parent_process->pagemap->switch_pagemap();
 
         Apic::localApic->eoi();
-        
+        log("about to switch\n");
+        dump_registers(scheduled_thread->regs);
         context_switch(scheduled_thread->regs);
     }
 }
@@ -329,28 +382,28 @@ void syscall_fork(context* regs) {
     Lock::acquire(&sched_lock);
     process_list.push_back(child);
     Lock::release(&sched_lock);
-
+    
     child->pid = Sched::get_new_pid();
 
     child->status = Sched::Status::Waiting;
     child->process_directory = parent->process_directory;
     
     child->pagemap = parent->pagemap->duplicate();
-    
+  
     for (size_t i = 0; i < parent->fd_list.size(); i++) {
-        auto fd = new Vfs::file_description;
+        Vfs::file_description* fd = new Vfs::file_description;
         memcpy(fd, parent->fd_list[i], sizeof(Vfs::file_description));
-
+        
         child->fd_list.push_back(fd);
     }
-
-    Sched::thread* main_thread = new Sched::thread;
     
+    Sched::thread* main_thread = new Sched::thread;
     main_thread->regs = new context;
-
+    
     int64_t new_tid = Sched::get_new_tid();
     if (new_tid == -1) {
         regs->rax = -1;
+        return;
     }
 
     main_thread->tid = new_tid;
@@ -362,7 +415,7 @@ void syscall_fork(context* regs) {
 
     child->threads.push_back(main_thread);
     Sched::queue(main_thread);
-
+    
     regs->rax = child->pid;
 }
 

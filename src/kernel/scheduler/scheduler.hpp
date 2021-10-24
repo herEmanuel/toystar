@@ -54,6 +54,8 @@ namespace Sched {
     bool exit_process();
     process* create_program(const char* path, const char** argv);
 
+    void dump_registers(context* regs);
+
 }
 
 void syscall_getpid(context* regs);

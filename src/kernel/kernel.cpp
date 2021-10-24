@@ -1,18 +1,19 @@
 #include <boot/stivale2.hpp>
-#include "x86_64/gdt.hpp"
-#include "x86_64/idt.hpp"
-#include "x86_64/apic.hpp"
-#include "x86_64/cpu.hpp"
-#include "memory/pmm.hpp"
-#include "memory/vmm.hpp"
-#include "memory/heap.hpp"
-#include "acpi/acpi.hpp"
 #include "video.hpp"
 #include "pci.hpp"
-#include "drivers/keyboard.hpp"
-#include "drivers/hpet.hpp"
-#include "drivers/serial.hpp"
-#include "scheduler/scheduler.hpp"
+#include <x86_64/gdt.hpp>
+#include <x86_64/idt.hpp>
+#include <x86_64/apic.hpp>
+#include <x86_64/cpu.hpp>
+#include <memory/pmm.hpp>
+#include <memory/vmm.hpp>
+#include <memory/heap.hpp>
+#include <acpi/acpi.hpp>
+#include <drivers/keyboard.hpp>
+#include <drivers/hpet.hpp>
+#include <drivers/serial.hpp>
+#include <drivers/tty.hpp>
+#include <scheduler/scheduler.hpp>
 #include <fs/vfs.hpp>
 #include <fs/tmpfs.hpp>
 #include <fs/devfs.hpp>
@@ -75,6 +76,8 @@ extern "C" void _start(stivale2_struct* stivale2) {
     PMM::init(memmap_info->memmap, memmap_info->entries);
 
     Heap::init();
+
+    Tty::init();
     
     VMM::init();
 
@@ -100,6 +103,8 @@ extern "C" void _start(stivale2_struct* stivale2) {
 
     Vfs::mount("tmpfs", "/");
     Vfs::mount("devfs", "/dev");
+    
+    Devfs::add_device("tty0", Tty::tty1);
     
     print("Mounted tmpfs at /\n");
     

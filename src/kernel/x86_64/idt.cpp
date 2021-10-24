@@ -45,7 +45,7 @@ void init_idt() {
     register_interrupt_handler(0x3, (uint64_t)&_isr_breakpoint, 0x8E, 0);
     register_interrupt_handler(0x8, (uint64_t)&_isr_double_fault, 0x8E, 0);
     register_interrupt_handler(0xD, (uint64_t)&_isr_general_protection, 0x8E, 0);
-    register_interrupt_handler(0x20, (uint64_t)&reschedule_handler, 0x8E, 0);
+    register_interrupt_handler(0x20, (uint64_t)&reschedule_handler, 0x8E, 1);
     register_interrupt_handler(0x80, (uint64_t)&syscall_entry, 0xEE, 0);
 
     idtDescriptor = {sizeof(idt), (uint64_t)&idt};

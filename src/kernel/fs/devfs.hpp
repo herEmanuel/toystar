@@ -35,7 +35,7 @@ namespace Devfs {
         int write(Vfs::fs_node* path, size_t offset, size_t size, char* buffer);
     };
 
-    void add_device(device* new_device);
+    void add_device(const char* name, device* new_device);
 }
 
 #endif

@@ -52,6 +52,7 @@ namespace Cpu {
             if (smpInfo->smp_info[i].lapic_id == smpInfo->bsp_lapic_id) {
                 TSS* tss = new TSS;
                 tss->rsp0 = (uint64_t) (PMM::alloc(4) + PHYSICAL_BASE_ADDRESS);
+                tss->ist1 = (uint64_t) (PMM::alloc(4) + PHYSICAL_BASE_ADDRESS);
 
                 load_tss((uint64_t)tss);
 
@@ -71,6 +72,7 @@ namespace Cpu {
         print("All cores have been initialized\n");
     }
 
+    //TODO: load tss for other cores 
     void core_init(stivale2_smp_info* smpInfo) {     
         load_gdt();
         load_idt();
